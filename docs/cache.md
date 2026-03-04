@@ -1,0 +1,378 @@
+# AI-First Framework — @ai-first/cache 说明
+
+> 本文档描述 `packages/cache/` 包的功能、API 与使用方式。
+
+---
+
+## 概述
+
+**路径：** `packages/cache/`  
+**包名：** `@ai-first/cache`  
+**版本：** 0.1.0  
+**描述：** Redis 缓存框架，提供 Spring Boot Cache 风格的装饰器与 Spring Data Redis 风格的 `RedisTemplate`，底层基于 [ioredis](https://github.com/redis/ioredis)。
+
+### 设计理念
+
+| 概念 | TypeScript（AI-First） | Java（Spring Boot） |
+|------|----------------------|---------------------|
+| 缓存组件标记 | `@RedisComponent()` | `@Service` / `@Repository` |
+| 读通缓存 | `@Cacheable` | `@Cacheable` |
+| 写通缓存 | `@CachePut` | `@CachePut` |
+| 缓存失效 | `@CacheEvict` | `@CacheEvict` |
+| Redis 操作模板 | `RedisTemplate<K, V>` | `RedisTemplate<K, V>` |
+| 字符串操作模板 | `StringRedisTemplate` | `StringRedisTemplate` |
+
+---
+
+## 快速开始
+
+```bash
+pnpm add @ai-first/cache
+```
+
+```typescript
+import 'reflect-metadata';
+import { createRedisConnection, RedisTemplate, RedisComponent, Cacheable } from '@ai-first/cache';
+
+// 1. 建立 Redis 连接（对应 application.properties: spring.data.redis.*）
+const client = createRedisConnection({ host: 'localhost', port: 6379 });
+
+// 2. 创建 RedisTemplate（对应 @Autowired RedisTemplate）
+const redisTemplate = new RedisTemplate<string, unknown>({ client });
+
+// 3. 使用 Cache 装饰器
+@RedisComponent()
+class UserService {
+  @Cacheable({ key: 'user', ttl: 300 })
+  async getUserById(id: number): Promise<User> {
+    return db.findUser(id);
+  }
+}
+```
+
+---
+
+## 连接配置
+
+### createRedisConnection
+
+```typescript
+import { createRedisConnection, closeRedisConnection } from '@ai-first/cache';
+
+// 单机模式（默认）
+const client = createRedisConnection({ host: '127.0.0.1', port: 6379 });
+
+// 带密码
+const client = createRedisConnection({ host: 'redis.example.com', port: 6379, password: 'secret' });
+
+// Sentinel 模式（高可用）
+const client = createRedisConnection({
+  mode: 'sentinel',
+  masterName: 'mymaster',
+  sentinels: [{ host: '127.0.0.1', port: 26379 }],
+});
+
+// Cluster 模式（集群）
+const client = createRedisConnection({
+  mode: 'cluster',
+  nodes: [{ host: '127.0.0.1', port: 7000 }, { host: '127.0.0.1', port: 7001 }],
+});
+
+// 关闭连接
+await closeRedisConnection();
+```
+
+### 配置项（单机模式）
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `host` | `string` | `'127.0.0.1'` | Redis 主机 |
+| `port` | `number` | `6379` | Redis 端口 |
+| `password` | `string` | — | 认证密码 |
+| `database` | `number` | `0` | 数据库索引 |
+| `connectTimeout` | `number` | `10000` | 连接超时（ms） |
+| `tls` | `boolean` | `false` | 启用 TLS |
+
+---
+
+## Cache 装饰器
+
+### @RedisComponent
+
+标记该类为 Redis 缓存组件，类似 Spring 中的 `@Service` / `@Repository`。  
+主要用于代码可读性与元数据标记，无运行时副作用。
+
+```typescript
+import { RedisComponent, getRedisComponentMetadata } from '@ai-first/cache';
+
+@RedisComponent({ name: 'UserCacheService' })
+class UserCacheService { ... }
+
+// 读取元数据
+const meta = getRedisComponentMetadata(UserCacheService);
+// { name: 'UserCacheService', className: 'UserCacheService' }
+```
+
+| 选项 | 类型 | 说明 |
+|------|------|------|
+| `name` | `string` | 组件名称（可选，用于日志/调试） |
+
+### @Cacheable
+
+缓存方法返回值。调用前先查缓存，命中则直接返回；未命中则执行方法并将结果写入缓存。  
+**未初始化 Redis 时自动降级，直接调用原方法。**
+
+```typescript
+import { Cacheable } from '@ai-first/cache';
+
+@Cacheable({ key: 'user', ttl: 300 })
+async getUserById(id: number): Promise<User> {
+  return db.findUser(id);  // Redis 命中时不会执行
+}
+
+// 自定义 key 生成器
+@Cacheable({
+  key: 'user',
+  ttl: 300,
+  keyGenerator: (id) => `profile:${id}`,
+})
+async getUserProfile(id: number): Promise<UserProfile> { ... }
+
+// 条件缓存
+@Cacheable({
+  key: 'user',
+  condition: (id) => (id as number) > 0,
+})
+async getUser(id: number): Promise<User | null> { ... }
+```
+
+| 选项 | 类型 | 说明 |
+|------|------|------|
+| `key` | `string` | 缓存 key 前缀，最终 key = `{key}::{参数}` |
+| `ttl` | `number` | 过期时间（秒），不设置则永久缓存 |
+| `keyGenerator` | `CacheKeyGenerator` | 自定义 key 生成函数，接收方法参数 |
+| `condition` | `(...args) => boolean` | 缓存条件，返回 `false` 时跳过缓存 |
+
+**对应 Java：**
+```java
+@Cacheable(value = "user", key = "#id")
+public User getUserById(Long id) { ... }
+```
+
+### @CachePut
+
+每次都执行方法，并将返回值写入缓存（不跳过方法执行）。用于写操作后同步更新缓存。
+
+```typescript
+import { CachePut } from '@ai-first/cache';
+
+@CachePut({ key: 'user', ttl: 300, keyGenerator: (id) => String(id) })
+async updateUser(id: number, user: User): Promise<User> {
+  return db.updateUser(id, user);  // 始终执行，结果写入缓存
+}
+```
+
+**对应 Java：**
+```java
+@CachePut(value = "user", key = "#id")
+public User updateUser(Long id, User user) { ... }
+```
+
+### @CacheEvict
+
+执行方法后删除指定缓存（也可配置为执行前删除）。
+
+```typescript
+import { CacheEvict } from '@ai-first/cache';
+
+// 删除单个缓存 key
+@CacheEvict({ key: 'user' })
+async deleteUser(id: number): Promise<void> {
+  await db.deleteUser(id);
+}
+
+// 清除所有以 'user::' 开头的缓存
+@CacheEvict({ key: 'user', allEntries: true })
+async clearAllUsers(): Promise<void> { ... }
+
+// 在方法执行前清除缓存
+@CacheEvict({ key: 'user', beforeInvocation: true })
+async resetUser(id: number): Promise<void> { ... }
+```
+
+| 选项 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `key` | `string` | — | 缓存 key 前缀 |
+| `keyGenerator` | `CacheKeyGenerator` | — | 自定义 key 生成函数 |
+| `allEntries` | `boolean` | `false` | 清除所有以 `key::` 开头的缓存 |
+| `beforeInvocation` | `boolean` | `false` | 是否在方法执行前清除缓存 |
+
+**对应 Java：**
+```java
+@CacheEvict(value = "user", key = "#id")
+public void deleteUser(Long id) { ... }
+
+@CacheEvict(value = "user", allEntries = true)
+public void clearAll() { ... }
+```
+
+---
+
+## RedisTemplate\<K, V\>
+
+Spring Data Redis 风格的 Redis 操作模板，提供类型安全的 API。
+
+```typescript
+import { createRedisConnection, RedisTemplate, StringRedisTemplate } from '@ai-first/cache';
+
+const client = createRedisConnection({ host: 'localhost', port: 6379 });
+
+// 通用模板（JSON 序列化）
+const redisTemplate = new RedisTemplate<string, unknown>({ client });
+
+// 字符串专用模板（passthrough 序列化）
+const stringTemplate = new StringRedisTemplate({ client });
+```
+
+### 全局 Key 操作
+
+| 方法 | Spring 对应 | 说明 |
+|------|-------------|------|
+| `hasKey(key)` | `hasKey(K key)` | 判断 key 是否存在 |
+| `delete(key)` | `delete(K key)` | 删除单个或多个 key |
+| `expire(key, seconds)` | `expire(K key, Duration timeout)` | 设置过期时间 |
+| `getExpire(key)` | `getExpire(K key)` | 获取剩余 TTL（秒） |
+| `keys(pattern)` | `keys(K pattern)` | 按 pattern 查找 key |
+| `rename(oldKey, newKey)` | `rename(K oldKey, K newKey)` | 重命名 key |
+| `type(key)` | `type(K key)` | 获取 key 类型 |
+
+### opsForValue() — String 操作
+
+```typescript
+const ops = redisTemplate.opsForValue();
+
+await ops.set('name', '张三');
+await ops.set('counter', 0, 60);            // 带 TTL（秒）
+const val = await ops.get('name');           // '张三'
+await ops.increment('counter');              // +1
+await ops.decrement('counter');              // -1
+await ops.multiSet(new Map([['k1', 'v1'], ['k2', 'v2']]));
+const vals = await ops.multiGet(['k1', 'k2']);
+const len = await ops.size('name');          // 字符串长度
+```
+
+### opsForHash() — Hash 操作
+
+```typescript
+const hashOps = redisTemplate.opsForHash<string, string>();
+
+await hashOps.put('user:1', 'name', '张三');
+await hashOps.putAll('user:1', new Map([['email', 'a@b.com'], ['age', '25']]));
+const name = await hashOps.get('user:1', 'name');
+const entries = await hashOps.entries('user:1');  // Map<string, string>
+const keys = await hashOps.keys('user:1');
+const size = await hashOps.size('user:1');
+await hashOps.delete('user:1', 'age');
+const exists = await hashOps.hasKey('user:1', 'name');
+```
+
+### opsForList() — List 操作
+
+```typescript
+const listOps = redisTemplate.opsForList();
+
+await listOps.rightPush('queue', 'task1');
+await listOps.leftPush('queue', 'task0');
+const task = await listOps.leftPop('queue');
+const items = await listOps.range('queue', 0, -1);
+const size = await listOps.size('queue');
+await listOps.set('queue', 0, 'updated');
+```
+
+### opsForSet() — Set 操作
+
+```typescript
+const setOps = redisTemplate.opsForSet();
+
+await setOps.add('tags', 'redis', 'cache', 'nosql');
+const members = await setOps.members('tags');   // Set<string>
+const has = await setOps.isMember('tags', 'redis');
+const size = await setOps.size('tags');
+await setOps.remove('tags', 'nosql');
+```
+
+### opsForZSet() — 有序集合操作
+
+```typescript
+const zsetOps = redisTemplate.opsForZSet();
+
+await zsetOps.add('leaderboard', 'player1', 100);
+await zsetOps.incrementScore('leaderboard', 'player1', 50);
+const score = await zsetOps.score('leaderboard', 'player1');
+const top3 = await zsetOps.reverseRange('leaderboard', 0, 2);
+const top3WithScores = await zsetOps.reverseRangeWithScores('leaderboard', 0, 2);
+const rank = await zsetOps.reverseRank('leaderboard', 'player1');
+const count = await zsetOps.count('leaderboard', 0, 200);
+```
+
+---
+
+## 完整示例
+
+```typescript
+import 'reflect-metadata';
+import {
+  createRedisConnection, closeRedisConnection,
+  RedisTemplate, StringRedisTemplate,
+  RedisComponent, Cacheable, CachePut, CacheEvict,
+} from '@ai-first/cache';
+
+interface User { id: number; name: string; email: string; }
+
+@RedisComponent({ name: 'UserCacheService' })
+class UserCacheService {
+  private db = new Map<number, User>([
+    [1, { id: 1, name: '张三', email: 'zhangsan@example.com' }],
+  ]);
+
+  @Cacheable({ key: 'user', ttl: 300 })
+  async getUserById(id: number): Promise<User | null> {
+    console.log('[DB] 查询数据库');
+    return this.db.get(id) ?? null;
+  }
+
+  @CachePut({ key: 'user', ttl: 300, keyGenerator: (_id, user) => String((user as User).id) })
+  async updateUser(_id: number, user: User): Promise<User> {
+    this.db.set(user.id, user);
+    return user;
+  }
+
+  @CacheEvict({ key: 'user' })
+  async deleteUser(id: number): Promise<void> {
+    this.db.delete(id);
+  }
+}
+
+const client = createRedisConnection({ host: 'localhost', port: 6379 });
+const redisTemplate = new RedisTemplate<string, unknown>({ client });
+
+const userService = new UserCacheService();
+const user = await userService.getUserById(1);  // 第一次：查询 DB
+await userService.getUserById(1);               // 第二次：命中缓存
+await userService.deleteUser(1);               // 清除缓存
+
+// 直接操作 Redis
+const ops = redisTemplate.opsForValue();
+await ops.set('config:timeout', 30, 3600);
+const timeout = await ops.get('config:timeout');
+
+await closeRedisConnection();
+```
+
+---
+
+## 依赖
+
+- `ioredis ^5.4.2`
+- `reflect-metadata ^0.2.1`
+- `@ai-first/di workspace:*`

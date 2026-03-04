@@ -11,6 +11,7 @@
 | `@ai-first/di` | 0.1.0 | 依赖注入容器（基于 TSyringe） |
 | `@ai-first/core` | 0.1.0 | 业务领域层装饰器（Service、Transactional） |
 | `@ai-first/orm` | 0.1.0 | ORM 框架（MyBatis-Plus 风格） |
+| `@ai-first/cache` | 0.1.0 | 缓存框架（Spring Cache + RedisTemplate 风格，基于 ioredis） |
 | `@ai-first/validation` | 0.1.0 | 数据校验（基于 class-validator） |
 | `@ai-first/nextjs` | 0.1.0 | Web 层装饰器（Spring Boot 风格，适配 Next.js） |
 | `@ai-first/codegen` | 0.1.0 | TypeScript → Java 代码生成器 |
@@ -226,6 +227,75 @@ const adapter = new PostgresAdapter<User>({
 - `@ai-first/core workspace:*`
 - `@ai-first/di workspace:*`
 - `pg >=8.0.0`（可选）
+
+---
+
+## @ai-first/cache
+
+**路径：** `packages/cache/`  
+**描述：** 缓存框架，提供 Spring Boot Cache 风格装饰器（`@Cacheable`、`@CachePut`、`@CacheEvict`）与 Spring Data Redis 风格的 `RedisTemplate<K, V>`，底层基于 ioredis。
+
+### 装饰器
+
+#### @RedisComponent
+
+```typescript
+import { RedisComponent, getRedisComponentMetadata } from '@ai-first/cache';
+
+@RedisComponent({ name: 'UserCacheService' })
+export class UserCacheService { ... }
+```
+
+#### @Cacheable / @CachePut / @CacheEvict
+
+```typescript
+import { Cacheable, CachePut, CacheEvict } from '@ai-first/cache';
+
+@Cacheable({ key: 'user', ttl: 300 })
+async getUserById(id: number): Promise<User> { return db.findUser(id); }
+
+@CachePut({ key: 'user', ttl: 300, keyGenerator: (id) => String(id) })
+async updateUser(id: number, user: User): Promise<User> { return db.updateUser(id, user); }
+
+@CacheEvict({ key: 'user' })
+async deleteUser(id: number): Promise<void> { await db.deleteUser(id); }
+
+// 清除所有以 'user::' 开头的缓存
+@CacheEvict({ key: 'user', allEntries: true })
+async clearAll(): Promise<void> { ... }
+```
+
+### RedisTemplate\<K, V\>
+
+```typescript
+import { createRedisConnection, RedisTemplate, StringRedisTemplate } from '@ai-first/cache';
+
+const client = createRedisConnection({ host: 'localhost', port: 6379 });
+const redisTemplate = new RedisTemplate<string, unknown>({ client });
+const stringTemplate = new StringRedisTemplate({ client });
+
+// String 操作
+const ops = redisTemplate.opsForValue();
+await ops.set('key', { name: '张三' }, 300);
+const val = await ops.get('key');
+
+// Hash 操作
+const hashOps = redisTemplate.opsForHash<string, string>();
+await hashOps.put('user:1', 'name', '张三');
+
+// List / Set / ZSet
+redisTemplate.opsForList();
+redisTemplate.opsForSet();
+redisTemplate.opsForZSet();
+```
+
+> 详细 API 见 [docs/cache.md](./cache.md)
+
+### 依赖
+
+- `ioredis ^5.4.2`
+- `reflect-metadata ^0.2.1`
+- `@ai-first/di workspace:*`
 
 ---
 
@@ -483,11 +553,11 @@ npx ai-first-codegen --input src/api --output out/java --package com.example
     ↑
 @ai-first/core  ←────────────────────────────────────┐
     ↑                                                  │
-@ai-first/orm                                @ai-first/nextjs
+@ai-first/orm     @ai-first/cache           @ai-first/nextjs
     ↑                                                  ↑
 @ai-first/validation                                   │
                                                        │
-                                         应用代码 (user-crud / admin)
+                                         应用代码 (user-crud / admin / cache-example)
 ```
 
 ---

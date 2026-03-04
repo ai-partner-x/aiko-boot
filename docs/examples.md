@@ -5,6 +5,7 @@
 | 示例 | 描述 | 技术栈 |
 |------|------|--------|
 | user-crud | 用户管理 CRUD 应用 | Next.js + shadcn/ui + 全栈分层架构 |
+| cache-example | 缓存组件使用示例 | Node.js + @ai-first/cache + 可选 Redis |
 
 ---
 
@@ -406,3 +407,68 @@ pnpm dev
 3. **依赖注入顺序**
    - Mapper → Service → Controller
    - 由框架自动处理
+
+---
+
+## cache-example - 缓存组件示例
+
+一个展示 `@ai-first/cache` 在应用层完整用法的 Node.js TypeScript 示例。
+
+### 功能特性
+
+- ✅ `@RedisComponent` — 标记缓存组件
+- ✅ `@Cacheable` — 查询接口缓存
+- ✅ `@CachePut` — 更新接口缓存同步
+- ✅ `@CacheEvict` — 创建/删除时清除缓存
+- ✅ `RedisTemplate` — String / Hash / ZSet 直接操作
+- ✅ 无 Redis 时自动降级（不影响业务逻辑）
+
+### 技术栈
+
+```
+运行时: Node.js + TypeScript
+缓存: @ai-first/cache（ioredis）
+Redis: 可选（未配置时自动降级）
+```
+
+### 目录结构
+
+```
+cache-example/
+├── src/
+│   ├── entity/
+│   │   └── user.entity.ts           # 用户实体
+│   ├── service/
+│   │   └── user.cache.service.ts    # 用户缓存服务（带缓存装饰器）
+│   └── index.ts                     # 主入口 & 演示脚本
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+### 快速启动
+
+```bash
+# 1. 进入示例目录
+cd app/examples/cache-example
+
+# 2. 安装依赖
+pnpm install
+
+# 3a. 运行（无 Redis，装饰器自动降级）
+pnpm start
+
+# 3b. 运行（有 Redis）
+REDIS_HOST=127.0.0.1 REDIS_PORT=6379 pnpm start
+```
+
+### 对应 Java Spring Boot
+
+| TypeScript（AI-First）| Java（Spring Boot）|
+|---|---|
+| `@RedisComponent()` | `@Service` |
+| `@Cacheable({ key, ttl })` | `@Cacheable(value, key)` |
+| `@CachePut({ key, ttl })` | `@CachePut(value, key)` |
+| `@CacheEvict({ key })` | `@CacheEvict(value, key)` |
+| `@CacheEvict({ allEntries: true })` | `@CacheEvict(allEntries = true)` |
+| `RedisTemplate<K, V>` | `RedisTemplate<K, V>` |

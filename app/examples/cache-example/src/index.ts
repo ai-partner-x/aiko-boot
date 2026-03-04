@@ -1,0 +1,136 @@
+/**
+ * Cache Example - 入口
+ *
+ * 演示 @ai-first/cache 在应用层的用法：
+ * 1. 带装饰器的 UserCacheService（无需 Redis 可自动降级）
+ * 2. RedisTemplate 直接操作（需要 Redis 实例）
+ *
+ * 运行：
+ *   # 无 Redis（装饰器自动降级）
+ *   pnpm start
+ *
+ *   # 有 Redis
+ *   REDIS_HOST=127.0.0.1 REDIS_PORT=6379 pnpm start
+ */
+
+import 'reflect-metadata';
+import {
+  createRedisConnection,
+  closeRedisConnection,
+  RedisTemplate,
+  StringRedisTemplate,
+  getRedisComponentMetadata,
+} from '@ai-first/cache';
+import { UserCacheService } from './service/user.cache.service.js';
+
+const REDIS_HOST = process.env.REDIS_HOST;
+const REDIS_PORT = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379;
+
+async function main() {
+  console.log('=== @app/cache-example ===\n');
+
+  // ==================== Redis 连接（可选）====================
+
+  let redisTemplate: RedisTemplate<string, unknown> | null = null;
+  let stringTemplate: StringRedisTemplate | null = null;
+
+  if (REDIS_HOST) {
+    console.log(`--- 连接 Redis: ${REDIS_HOST}:${REDIS_PORT} ---`);
+    const client = createRedisConnection({ host: REDIS_HOST, port: REDIS_PORT });
+    redisTemplate = new RedisTemplate<string, unknown>({ client });
+    stringTemplate = new StringRedisTemplate({ client });
+    console.log('  Redis 连接成功\n');
+  } else {
+    console.log('--- 未配置 REDIS_HOST，跳过 Redis 连接（装饰器自动降级）---\n');
+  }
+
+  // ==================== UserCacheService 装饰器示例 ====================
+
+  console.log('--- RedisComponent 元数据 ---');
+  const meta = getRedisComponentMetadata(UserCacheService);
+  console.log('  Metadata:', meta);
+  console.log('');
+
+  const userService = new UserCacheService();
+
+  // @Cacheable - 查询
+  console.log('--- @Cacheable: getUserById ---');
+  console.log('第一次查询（访问 DB）:');
+  const user1 = await userService.getUserById(1);
+  console.log('  result:', user1);
+
+  console.log('第二次查询（有 Redis 则命中缓存，不访问 DB）:');
+  const user1Cached = await userService.getUserById(1);
+  console.log('  result:', user1Cached);
+  console.log('');
+
+  // @Cacheable - 列表
+  console.log('--- @Cacheable: getUserList ---');
+  const list = await userService.getUserList();
+  console.log('  list count:', list.length);
+  console.log('');
+
+  // @CacheEvict + create（清除列表缓存）
+  console.log('--- @CacheEvict: createUser（清除 user:list 缓存）---');
+  const newUser = await userService.createUser({ name: '赵六', email: 'zhaoliu@example.com', age: 28 });
+  console.log('  created:', newUser);
+  console.log('');
+
+  // @CachePut - 更新
+  console.log('--- @CachePut: updateUser ---');
+  const updated = await userService.updateUser(1, { name: '张三（已更新）', age: 26 });
+  console.log('  updated:', updated);
+  console.log('');
+
+  // @CacheEvict - 删除
+  console.log('--- @CacheEvict: deleteUser ---');
+  const deleted = await userService.deleteUser(2);
+  console.log('  deleteUser(2):', deleted);
+  console.log('');
+
+  // ==================== RedisTemplate 直接操作（需要 Redis）====================
+
+  if (redisTemplate && stringTemplate) {
+    console.log('--- RedisTemplate: opsForValue ---');
+    const valueOps = redisTemplate.opsForValue();
+    await valueOps.set('app:version', '1.0.0', 3600);
+    const version = await valueOps.get('app:version');
+    console.log('  app:version:', version);
+
+    await valueOps.set('app:counter', 0, 3600);
+    await valueOps.increment('app:counter');
+    await valueOps.increment('app:counter');
+    const counter = await valueOps.get('app:counter');
+    console.log('  app:counter (after 2 increments):', counter);
+    console.log('');
+
+    console.log('--- RedisTemplate: opsForHash ---');
+    const hashOps = redisTemplate.opsForHash<string, string>();
+    await hashOps.put('session:abc123', 'userId', '1');
+    await hashOps.put('session:abc123', 'role', 'admin');
+    const sessionEntries = await hashOps.entries('session:abc123');
+    console.log('  session:abc123:', Object.fromEntries(sessionEntries));
+    console.log('');
+
+    console.log('--- RedisTemplate: opsForZSet (排行榜) ---');
+    const zsetOps = redisTemplate.opsForZSet();
+    await zsetOps.add('score:board', 'user:1', 1500);
+    await zsetOps.add('score:board', 'user:2', 2300);
+    await zsetOps.add('score:board', 'user:3', 1800);
+    const top3 = await zsetOps.reverseRangeWithScores('score:board', 0, 2);
+    console.log('  Top 3:', top3);
+    console.log('');
+
+    // 清理测试数据
+    console.log('--- 清理测试数据 ---');
+    await redisTemplate.delete(['app:version', 'app:counter', 'session:abc123', 'score:board']);
+    console.log('  done');
+    console.log('');
+
+    await closeRedisConnection();
+  }
+
+  console.log('=== 示例完成 ===');
+}
+
+main().catch(console.error);
