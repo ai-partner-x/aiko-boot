@@ -15,7 +15,7 @@
 
 | 概念 | TypeScript（AI-First） | Java（Spring Boot） |
 |------|----------------------|---------------------|
-| 缓存组件标记（含 DI 注册） | `@RedisComponent()` | `@Service` / `@Repository` |
+| 缓存组件标记（含 DI 注册） | `@Service()` | `@Service` / `@Repository` |
 | 属性注入 | `@Autowired()` | `@Autowired` |
 | 读通缓存 | `@Cacheable` | `@Cacheable` |
 | 写通缓存 | `@CachePut` | `@CachePut` |
@@ -31,11 +31,6 @@
 pnpm add @ai-first/cache
 ```
 
-### 方式一：@Service / @Component + @Cacheable（推荐）
-
-使用通用 DI 装饰器作为类装饰器，方法上使用 `@Cacheable` 等缓存注解。  
-**当方法带有 `@Cacheable`/`@CachePut`/`@CacheEvict` 时，类会被自动识别为缓存组件。**
-
 ```typescript
 import 'reflect-metadata';
 import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
@@ -47,8 +42,7 @@ class UserRepository {
   findById(id: number): User { return db.findUser(id); }
 }
 
-// @Service 作为类装饰器，无需 @RedisComponent
-// 方法带有 @Cacheable，类被自动识别为缓存组件（等同于 @RedisComponent）
+// 使用 @Service 作为类装饰器，与 Java Spring Boot 写法完全一致
 @Service()
 class UserCacheService {
   @Autowired()
@@ -71,29 +65,6 @@ class UserCacheService {
 }
 
 // 通过 DI 容器解析（等同于 Java @Autowired）
-const userService = Container.resolve(UserCacheService);
-```
-
-### 方式二：@RedisComponent（专用缓存组件装饰器）
-
-语义上更明确，表达"这个类是 Redis 缓存组件"。与方式一完全等价。
-
-```typescript
-import 'reflect-metadata';
-import { RedisComponent, Cacheable, Autowired } from '@ai-first/cache';
-import { Container } from '@ai-first/di';
-
-@RedisComponent()
-class UserCacheService {
-  @Autowired()
-  private userRepository!: UserRepository;
-
-  @Cacheable({ key: 'user', ttl: 300 })
-  async getUserById(id: number): Promise<User> {
-    return this.userRepository.findById(id);
-  }
-}
-
 const userService = Container.resolve(UserCacheService);
 ```
 
@@ -144,40 +115,15 @@ await closeRedisConnection();
 
 ## Cache 装饰器
 
-### 两种类级装饰器（等价）
+### @Service / @Component + 缓存注解
 
-#### 方式一：@Service / @Component（推荐）
-
-使用通用 DI 装饰器作为类装饰器。方法上有 `@Cacheable`/`@CachePut`/`@CacheEvict` 时，类**自动被识别为缓存组件**，无需显式添加 `@RedisComponent`。
+使用通用 DI 装饰器（来自 `@ai-first/core`）作为类装饰器，方法上使用缓存注解。与 Java Spring Boot 写法完全一致：
 
 ```typescript
-import { Service } from '@ai-first/core';          // 通用 DI 装饰器
+import { Service } from '@ai-first/core';
 import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
 
-// @Service 作为类装饰器，等同于 Java:
-// @Service
-// public class UserCacheService { ... }
-@Service({ name: 'UserCacheService' })
-class UserCacheService {
-  @Autowired()
-  private userRepository!: UserRepository;
-
-  // 有 @Cacheable → 类被自动识别为缓存组件
-  @Cacheable({ key: 'user', ttl: 300 })
-  async getUserById(id: number): Promise<User | null> {
-    return this.userRepository.findById(id);
-  }
-}
-```
-
-#### 方式二：@RedisComponent（专用装饰器）
-
-与方式一完全等价，语义上更明确地标记"这是 Redis 缓存组件"。
-
-```typescript
-import { RedisComponent, Cacheable, Autowired } from '@ai-first/cache';
-
-@RedisComponent({ name: 'UserCacheService' })
+@Service()
 class UserCacheService {
   @Autowired()
   private userRepository!: UserRepository;
@@ -187,44 +133,33 @@ class UserCacheService {
     return this.userRepository.findById(id);
   }
 }
-```
 
-两种方式都支持：
-- **自动注册到 DI 容器**（Injectable + Singleton），可被其他服务通过 `@Autowired` 注入
-- **支持构造函数注入**（constructor injection）
-- **支持 `@Autowired` 属性注入**（通过 DI 容器自动管理依赖）
-- **未初始化 Redis 时自动降级**，缓存方法直接调用原始实现
-- `getRedisComponentMetadata()` 返回有效元数据
-
-```typescript
-// 通过 DI 容器解析（两种方式均有效）
+// 通过 DI 容器解析
 const svc = Container.resolve(UserCacheService);
 
-// 在另一个 @Service 中注入（两种方式均有效）
+// 在另一个 @Service 中注入
 @Service()
 class UserService {
   @Autowired()
   private cacheService!: UserCacheService;
 }
-
-// 读取元数据（两种方式均返回有效数据）
-const meta = getRedisComponentMetadata(UserCacheService);
-// 方式一（@Service + @Cacheable）: { className: 'UserCacheService' }
-// 方式二（@RedisComponent）:        { name: 'UserCacheService', className: 'UserCacheService' }
 ```
 
-### @RedisComponent 选项
-
-| 选项 | 类型 | 说明 |
-|------|------|------|
-| `name` | `string` | 组件名称（可选，用于日志/调试） |
+`@Service` / `@Component` 行为：
+- **自动注册到 DI 容器**（Injectable + Singleton），可被其他服务通过 `@Autowired` 注入
+- **支持构造函数注入**（constructor injection）
+- **支持 `@Autowired` 属性注入**（通过 DI 容器自动管理依赖）
+- **未初始化 Redis 时自动降级**，缓存方法直接调用原始实现
 
 **对应 Java：**
 ```java
-@Service  // 等价于 @RedisComponent
+@Service
 public class UserCacheService {
     @Autowired
     private UserRepository userRepository;
+
+    @Cacheable(value = "user", key = "#id")
+    public User getUserById(Long id) { ... }
 }
 ```
 
@@ -233,7 +168,7 @@ public class UserCacheService {
 `@ai-first/cache` 已内置再导出 `@Autowired`，无需单独引入 `@ai-first/di`：
 
 ```typescript
-import { RedisComponent, Autowired } from '@ai-first/cache';
+import { Cacheable, Autowired } from '@ai-first/cache';
 // 等同于：import { Autowired } from '@ai-first/di';
 ```
 
@@ -444,10 +379,10 @@ import 'reflect-metadata';
 import {
   createRedisConnection, closeRedisConnection,
   RedisTemplate,
-  RedisComponent, Cacheable, CachePut, CacheEvict, Autowired,
+  Cacheable, CachePut, CacheEvict, Autowired,
 } from '@ai-first/cache';
-import { Container } from '@ai-first/di';
 import { Service } from '@ai-first/core';
+import { Container } from '@ai-first/di';
 
 interface User { id: number; name: string; email: string; }
 
@@ -462,8 +397,8 @@ class UserRepository {
   remove(id: number): void { this.db.delete(id); }
 }
 
-// 缓存层：@RedisComponent = @Service + 缓存语义
-@RedisComponent({ name: 'UserCacheService' })
+// 缓存层：@Service 作为类装饰器，与 Java @Service 完全一致
+@Service()
 class UserCacheService {
   @Autowired()
   private userRepository!: UserRepository;  // DI 自动注入

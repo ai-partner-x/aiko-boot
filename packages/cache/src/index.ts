@@ -26,7 +26,6 @@ export {
 
 // Decorators
 export {
-  RedisComponent,
   Cacheable,
   CachePut,
   CacheEvict,
@@ -35,13 +34,12 @@ export {
   CACHEABLE_METADATA,
   CACHE_PUT_METADATA,
   CACHE_EVICT_METADATA,
-  type RedisComponentOptions,
   type CacheableOptions,
   type CacheEvictOptions,
   type CacheKeyGenerator,
 } from './decorators.js';
 
-// DI convenience re-exports — @RedisComponent 已集成 DI，配合 @Autowired 使用
+// DI convenience re-exports — 配合 @Autowired 属性注入使用
 export { Autowired } from '@ai-first/di/server';
 
 // Operations

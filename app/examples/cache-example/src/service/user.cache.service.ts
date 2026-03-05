@@ -1,15 +1,10 @@
 /**
  * 用户缓存服务
  *
- * 展示 @ai-first/cache 与通用 DI 装饰器的结合用法：
- * - 使用 @Service（@ai-first/core 的通用 DI 装饰器）作为类装饰器
- * - @Autowired 属性注入（由 DI 容器管理，等同于 Spring @Autowired）
+ * 使用 @Service（通用 DI 装饰器）作为类装饰器，方法上使用缓存注解：
  * - @Cacheable 读通缓存（查询）
  * - @CachePut 写通缓存（更新）
  * - @CacheEvict 缓存失效（创建/删除）
- *
- * 当类方法带有 @Cacheable/@CachePut/@CacheEvict 时，
- * 即使只使用 @Service 作为类装饰器，类也会被自动识别为 Redis 缓存组件。
  *
  * 对应 Java Spring Boot:
  * @Service
@@ -28,10 +23,9 @@ import { type User } from '../entity/user.entity.js';
 import { UserRepository } from '../entity/user.repository.js';
 
 /**
- * @Service 作为类装饰器（等同于 @RedisComponent）：
+ * @Service 作为类装饰器：
  * - 自动注册到 DI 容器（Injectable + Singleton）
  * - 支持 @Autowired 属性注入
- * - 方法上带有 @Cacheable/@CachePut/@CacheEvict 时，自动被识别为缓存组件
  */
 @Service({ name: 'UserCacheService' })
 export class UserCacheService {

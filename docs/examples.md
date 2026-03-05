@@ -416,7 +416,7 @@ pnpm dev
 
 ### 功能特性
 
-- ✅ `@RedisComponent` — 标记缓存组件
+- ✅ `@Service` + `@Cacheable` — 缓存服务类
 - ✅ `@Cacheable` — 查询接口缓存
 - ✅ `@CachePut` — 更新接口缓存同步
 - ✅ `@CacheEvict` — 创建/删除时清除缓存
@@ -466,7 +466,7 @@ REDIS_HOST=127.0.0.1 REDIS_PORT=6379 pnpm start
 
 | TypeScript（AI-First）| Java（Spring Boot）|
 |---|---|
-| `@RedisComponent()` | `@Service` |
+| `@Service()` | `@Service` |
 | `@Cacheable({ key, ttl })` | `@Cacheable(value, key)` |
 | `@CachePut({ key, ttl })` | `@CachePut(value, key)` |
 | `@CacheEvict({ key })` | `@CacheEvict(value, key)` |

@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- ✅ `@RedisComponent` — 标记缓存组件
+- ✅ `@Service` + `@Cacheable` — 缓存服务类（与 Java Spring Boot 写法完全一致）
 - ✅ `@Cacheable` — 读通缓存（查询）
 - ✅ `@CachePut` — 写通缓存（更新）
 - ✅ `@CacheEvict` — 缓存失效（创建/删除）
@@ -39,7 +39,7 @@ REDIS_HOST=127.0.0.1 REDIS_PORT=6379 pnpm start
 
 | TypeScript（AI-First）| Java（Spring Boot）|
 |---|---|
-| `@RedisComponent()` | `@Service` |
+| `@Service()` | `@Service` |
 | `@Cacheable({ key, ttl })` | `@Cacheable(value, key)` |
 | `@CachePut({ key, ttl })` | `@CachePut(value, key)` |
 | `@CacheEvict({ key })` | `@CacheEvict(value, key)` |
@@ -48,23 +48,27 @@ REDIS_HOST=127.0.0.1 REDIS_PORT=6379 pnpm start
 ## 核心代码
 
 ```typescript
-import { RedisComponent, Cacheable, CachePut, CacheEvict } from '@ai-first/cache';
+import { Service } from '@ai-first/core';
+import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
 
-@RedisComponent({ name: 'UserCacheService' })
+@Service()
 export class UserCacheService {
+  @Autowired()
+  private userRepository!: UserRepository;
+
   @Cacheable({ key: 'user', ttl: 300 })
   async getUserById(id: number): Promise<User | null> {
-    return db.findUser(id);  // Redis 命中时不会执行
+    return this.userRepository.findById(id);  // Redis 命中时不会执行
   }
 
   @CachePut({ key: 'user', ttl: 300, keyGenerator: (id) => String(id) })
   async updateUser(id: number, data: Partial<User>): Promise<User> {
-    return db.updateUser(id, data);  // 始终执行，结果写入缓存
+    return this.userRepository.update(id, data);  // 始终执行，结果写入缓存
   }
 
   @CacheEvict({ key: 'user' })
   async deleteUser(id: number): Promise<boolean> {
-    return db.deleteUser(id);  // 执行后清除缓存
+    return this.userRepository.remove(id);  // 执行后清除缓存
   }
 }
 ```

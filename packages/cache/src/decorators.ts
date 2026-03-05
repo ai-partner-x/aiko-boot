@@ -1,52 +1,43 @@
 /**
  * Redis Decorators - Spring Boot 风格的缓存注解
  *
- * 提供与 Spring Cache 风格兼容的装饰器：
- * - @RedisComponent — 标记 Redis 缓存组件（兼容 @Component/@Service，自动注册到 DI 容器）
+ * 提供与 Spring Cache 风格兼容的方法装饰器：
  * - @Cacheable — 缓存方法返回值，存在时直接返回缓存
  * - @CachePut — 执行方法并将返回值更新到缓存
  * - @CacheEvict — 执行方法后删除缓存
  *
- * ## 两种使用方式（等价）
+ * 使用方式：在类上使用 @Service / @Component（来自 @ai-first/core），
+ * 方法上使用 @Cacheable / @CachePut / @CacheEvict（来自 @ai-first/cache）。
  *
- * ### 方式一：@RedisComponent（专用装饰器，对标 Spring @Service）
- * ```typescript
- * import { RedisComponent, Cacheable, Autowired } from '@ai-first/cache';
- *
- * @RedisComponent()
- * class UserCacheService {
- *   @Autowired()
- *   private userRepository!: UserRepository;
- *
- *   @Cacheable({ key: 'user', ttl: 300 })
- *   async getUserById(id: number): Promise<User> {
- *     return this.userRepository.findById(id);
- *   }
- * }
- * ```
- *
- * ### 方式二：@Service / @Component（通用 DI 装饰器）
+ * @example
  * ```typescript
  * import { Service } from '@ai-first/core';
- * import { Cacheable, Autowired } from '@ai-first/cache';
+ * import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
  *
  * @Service()
  * class UserCacheService {
  *   @Autowired()
  *   private userRepository!: UserRepository;
  *
- *   // 当方法带有 @Cacheable/@CachePut/@CacheEvict 时，
- *   // 类会被自动识别为 Redis 缓存组件（等同于 @RedisComponent）
  *   @Cacheable({ key: 'user', ttl: 300 })
  *   async getUserById(id: number): Promise<User> {
  *     return this.userRepository.findById(id);
+ *   }
+ *
+ *   @CachePut({ key: 'user', ttl: 300 })
+ *   async updateUser(id: number, user: User): Promise<User> {
+ *     return this.userRepository.save(user);
+ *   }
+ *
+ *   @CacheEvict({ key: 'user' })
+ *   async deleteUser(id: number): Promise<void> {
+ *     await this.userRepository.delete(id);
  *   }
  * }
  * ```
  */
 
 import 'reflect-metadata';
-import { Injectable, Singleton, inject, injectAutowiredProperties } from '@ai-first/di/server';
 import { getRedisClient, isRedisInitialized } from './config.js';
 
 // ==================== Metadata Keys ====================
@@ -60,12 +51,6 @@ export const CACHE_EVICT_METADATA = Symbol('cacheEvict');
 
 /** 缓存 key 生成函数，接收方法参数，返回缓存 key 字符串 */
 export type CacheKeyGenerator = (...args: unknown[]) => string;
-
-/** @RedisComponent 选项 */
-export interface RedisComponentOptions {
-  /** 组件名称（可选，用于日志） */
-  name?: string;
-}
 
 /** @Cacheable / @CachePut 选项 */
 export interface CacheableOptions {
@@ -145,98 +130,16 @@ function autoMarkRedisComponent(methodPrototype: object): void {
 // ==================== Decorators ====================
 
 /**
- * @RedisComponent 装饰器
- *
- * 标记该类为 Redis 缓存组件。在 Spring Boot 风格上对标 @Service / @Repository，
- * 同时自动注册到 DI 容器（Injectable + Singleton），并支持 @Autowired 属性注入。
- *
- * 效果等同于同时使用 @Service + 缓存语义标记：
- * - 自动注入构造函数参数（constructor injection）
- * - 支持 @Autowired 属性注入
- * - 注册为单例，可被其他 @Service / @Component 通过 @Autowired 注入
- *
- * @example
- * ```typescript
- * @RedisComponent({ name: 'UserCacheService' })
- * class UserCacheService {
- *   @Autowired()
- *   private userMapper!: UserMapper;
- *
- *   @Cacheable({ key: 'user', ttl: 300 })
- *   async getUserById(id: number): Promise<User> { ... }
- * }
- *
- * // 在 @Service 中注入 UserCacheService
- * @Service()
- * class UserService {
- *   @Autowired()
- *   private cacheService!: UserCacheService;
- * }
- *
- * // 通过 DI 容器解析
- * import { container } from '@ai-first/di';
- * const svc = container.resolve(UserCacheService);
- * ```
- */
-export function RedisComponent(options: RedisComponentOptions = {}) {
-  // Note: `any` is intentional here — TSyringe's Injectable/inject APIs require `any`-typed
-  // constructors; using `unknown` breaks compatibility with tsyringe's type signatures.
-  // This mirrors the same pattern used by @Service / @Component in @ai-first/core.
-  return function <T extends { new (...args: any[]): any }>(target: T): T {
-    // 存储 Redis 组件元数据
-    Reflect.defineMetadata(REDIS_COMPONENT_METADATA, {
-      ...options,
-      className: target.name,
-    }, target);
-
-    // 自动注入构造函数参数（constructor injection）
-    const paramTypes: unknown[] = Reflect.getMetadata('design:paramtypes', target) || [];
-    paramTypes.forEach((type: unknown, index: number) => {
-      // `undefined` for the property key is the TSyringe convention for constructor-parameter injection
-      inject(type as Parameters<typeof inject>[0])(target, undefined as any, index);
-    });
-
-    // 注册到 DI 容器（Injectable + Singleton），与 @Service / @Component 行为一致
-    Injectable()(target);
-    Singleton()(target);
-
-    // 包装构造函数，支持 @Autowired 属性注入
-    // `any` here is intentional: the wrapper must be assignable to T at runtime
-    const originalConstructor = target;
-    const newConstructor = function (this: any, ...args: any[]) {
-      const instance = new (originalConstructor as any)(...args);
-      injectAutowiredProperties(instance);
-      return instance;
-    } as unknown as T;
-
-    newConstructor.prototype = originalConstructor.prototype;
-    Object.setPrototypeOf(newConstructor, originalConstructor);
-
-    // 复制所有元数据（保留 @Cacheable / @CachePut / @CacheEvict 方法元数据）
-    const metadataKeys: (string | symbol)[] = Reflect.getMetadataKeys(originalConstructor) as (string | symbol)[];
-    metadataKeys.forEach((key: string | symbol) => {
-      const value = Reflect.getMetadata(key, originalConstructor);
-      Reflect.defineMetadata(key, value, newConstructor);
-    });
-
-    return newConstructor;
-  };
-}
-
-/**
  * @Cacheable 装饰器
  *
  * 缓存方法返回值。调用方法前先查缓存，命中则直接返回；未命中则执行方法并将结果写入缓存。
  * 对应 Spring: @Cacheable(value = "...", key = "...")
  *
- * 可与 @RedisComponent、@Service 或 @Component 类装饰器配合使用。
- * 应用此装饰器时会自动将所在类标记为缓存组件（若尚未标记）。
- *
  * @example
  * ```typescript
  * @Cacheable({ key: 'user', ttl: 300 })
  * async getUserById(id: number): Promise<User> {
- *   return db.findUser(id);
+ *   return db.findUser(id);  // Redis 命中时不会执行
  * }
  * ```
  */
@@ -292,9 +195,6 @@ export function Cacheable(options: CacheableOptions) {
  * 执行方法并将返回值更新到缓存，每次都执行方法（不跳过）。
  * 对应 Spring: @CachePut(value = "...", key = "...")
  *
- * 可与 @RedisComponent、@Service 或 @Component 类装饰器配合使用。
- * 应用此装饰器时会自动将所在类标记为缓存组件（若尚未标记）。
- *
  * @example
  * ```typescript
  * @CachePut({ key: 'user', ttl: 300 })
@@ -348,9 +248,6 @@ export function CachePut(options: CacheableOptions) {
  *
  * 执行方法后删除缓存（也可配置为执行前删除）。
  * 对应 Spring: @CacheEvict(value = "...", key = "...")
- *
- * 可与 @RedisComponent、@Service 或 @Component 类装饰器配合使用。
- * 应用此装饰器时会自动将所在类标记为缓存组件（若尚未标记）。
  *
  * @example
  * ```typescript
@@ -410,12 +307,12 @@ export function CacheEvict(options: CacheEvictOptions) {
 // ==================== Metadata Helpers ====================
 
 /**
- * 获取 RedisComponent 元数据
+ * 获取缓存组件元数据（由 @Cacheable/@CachePut/@CacheEvict 自动写入）
  */
 export function getRedisComponentMetadata(
   target: Function,
-): (RedisComponentOptions & { className: string }) | undefined {
+): { className: string } | undefined {
   return Reflect.getMetadata(REDIS_COMPONENT_METADATA, target) as
-    | (RedisComponentOptions & { className: string })
+    | { className: string }
     | undefined;
 }

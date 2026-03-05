@@ -1,7 +1,7 @@
 /**
  * 用户数据仓库（模拟数据库层）
  *
- * 使用 @Service 注册到 DI 容器，可被 @RedisComponent 通过 @Autowired 注入。
+ * 使用 @Service 注册到 DI 容器，可被 @Autowired 注入到缓存服务中。
  *
  * 对应 Java Spring Boot:
  * @Repository
