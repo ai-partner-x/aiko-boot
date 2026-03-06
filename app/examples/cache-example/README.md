@@ -55,14 +55,35 @@ pnpm install
 # 模式一：无 Redis — 装饰器自动降级，直接调用原方法
 pnpm start
 
-# 模式二：有 Redis，无密码
-$env:REDIS_HOST="127.0.0.1"; $env:REDIS_PORT="6379"; pnpm start
+# 模式二：有 Redis，无密码（显式清空 REDIS_PASSWORD，防止前一次运行的密码残留）
+$env:REDIS_HOST="127.0.0.1"; $env:REDIS_PORT="6379"; $env:REDIS_PASSWORD=""; pnpm start
 
 # 模式三：有 Redis，带密码认证
 $env:REDIS_HOST="127.0.0.1"; $env:REDIS_PORT="6379"; $env:REDIS_PASSWORD="yourpassword"; pnpm start
 ```
 
-> **提示**：PowerShell 不支持 `KEY=value command` 语法，需要用 `$env:KEY="value"` 单独设置环境变量，再以 `;` 分隔执行命令。
+> **提示**：PowerShell 不支持 `KEY=value command` 语法，需要用 `$env:KEY="value"` 单独设置环境变量，再以 `;` 分隔执行命令。`$env:` 赋值在当前会话中持久存在，切换模式时务必显式清空不再需要的变量（如 `$env:REDIS_PASSWORD=""`），否则上一次运行的值仍会生效。
+
+**Windows（CMD）**
+
+```cmd
+:: 进入示例目录（所有命令均在此目录下执行）
+cd app\examples\cache-example
+
+:: 安装依赖（首次运行或依赖变更后）
+pnpm install
+
+:: 模式一：无 Redis — 装饰器自动降级，直接调用原方法
+pnpm start
+
+:: 模式二：有 Redis，无密码（显式清空 REDIS_PASSWORD，防止前一次运行的密码残留）
+set REDIS_HOST=127.0.0.1 & set REDIS_PORT=6379 & set REDIS_PASSWORD= & pnpm start
+
+:: 模式三：有 Redis，带密码认证
+set REDIS_HOST=127.0.0.1 & set REDIS_PORT=6379 & set REDIS_PASSWORD=yourpassword & pnpm start
+```
+
+> **提示**：CMD 中 `set` 赋值在当前会话中持久存在，切换模式时务必用 `set REDIS_PASSWORD=`（等号后留空）显式清空，否则上一次运行的密码仍会生效。
 
 | 环境变量 | 说明 | 默认值 |
 |---|---|---|
