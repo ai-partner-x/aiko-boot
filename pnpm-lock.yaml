@@ -302,6 +302,9 @@ importers:
 
   packages/nextjs:
     dependencies:
+      '@ai-first/cache':
+        specifier: workspace:*
+        version: link:../cache
       '@ai-first/core':
         specifier: workspace:*
         version: link:../core

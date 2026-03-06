@@ -31,6 +31,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "reflect-metadata": "^0.2.1",
+    "@ai-first/cache": "workspace:*",
     "@ai-first/core": "workspace:*",
     "@ai-first/di": "workspace:*",
     "@ai-first/orm": "workspace:*"

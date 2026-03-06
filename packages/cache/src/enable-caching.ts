@@ -138,28 +138,43 @@ export function EnableCaching(config: RedisConfig) {
  * 初始化并验证 Redis 缓存连接（**必须**在异步启动阶段调用）
  *
  * 验证流程：
- * 1. 检查 @EnableCaching 是否已应用（未应用则抛出 CacheInitializationError）
+ * 1. 检查 @EnableCaching 是否已应用，或直接传入 config（未应用且无 config 则抛出 CacheInitializationError）
  * 2. 确认 Redis 配置已注册
  * 3. 向 Redis 发送 PING 命令验证连接可用性（默认超时 5 秒）
  *
  * 对应 Spring Boot 应用上下文启动时的 CacheManager 初始化检查。
  *
- * @throws {CacheInitializationError} 未调用 @EnableCaching、或 Redis 连接失败时
+ * @param config 可选。直接传入 Redis 配置时，无需事先调用 @EnableCaching。
+ *               等价于先调用 EnableCaching(config) 再调用 initializeCaching()。
+ *               供框架 bootstrap（如 createApp）内部使用，普通应用代码推荐使用 @EnableCaching 装饰器。
+ *
+ * @throws {CacheInitializationError} 未调用 @EnableCaching 且未传入 config、或 Redis 连接失败时
  *
  * @example
  * ```typescript
- * async function main() {
- *   await initializeCaching();  // 失败则抛出错误，阻止后续启动
- *   console.log('缓存连接就绪');
- * }
+ * // 方式一（推荐）：@EnableCaching 装饰器 + initializeCaching()
+ * @EnableCaching({ host: '127.0.0.1', port: 6379 })
+ * class AppConfig {}
+ * await initializeCaching();
+ *
+ * // 方式二：直接传入配置（框架内部 / createApp 使用）
+ * await initializeCaching({ host: '127.0.0.1', port: 6379 });
  * ```
  */
-export async function initializeCaching(): Promise<void> {
+export async function initializeCaching(config?: RedisConfig): Promise<void> {
+  // 直接传入 config 时，等价于先调用 @EnableCaching，优先级高于装饰器注册的配置。
+  // 如果之前已通过 @EnableCaching 注册过配置，此处会静默覆盖——
+  // 这是有意为之：框架 bootstrap（createApp）传入的显式配置始终优先。
+  if (config) {
+    _cachingEnabled = true;
+    _cachingConfig = config;
+  }
+
   if (!_cachingEnabled) {
     throw new CacheInitializationError(
       '[AI-First Cache] @EnableCaching is not applied. ' +
       'Add @EnableCaching({ host, port, ... }) to your application configuration class ' +
-      'before calling initializeCaching().',
+      'before calling initializeCaching(), or pass the config directly: initializeCaching({ host, port }).',
     );
   }
 

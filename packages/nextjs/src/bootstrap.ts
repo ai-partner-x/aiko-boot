@@ -7,7 +7,8 @@
  * 
  * const app = await createApp({
  *   srcDir: import.meta.dirname,
- *   database: { type: 'sqlite', filename: ':memory:' }
+ *   database: { type: 'sqlite', filename: ':memory:' },
+ *   cache: { host: '127.0.0.1', port: 6379 },
  * });
  * app.listen(3001, () => console.log('Server running on port 3001'));
  * ```
@@ -21,8 +22,10 @@ import { createExpressRouter } from './express-router.js';
 import { getControllerMetadata } from './decorators.js';
 import { Injectable, Singleton } from '@ai-first/di/server';
 import { createKyselyDatabase, type DatabaseConnectionConfig } from '@ai-first/orm';
+import { initializeCaching, isCachingEnabled, type RedisConfig } from '@ai-first/cache';
 
 export type { DatabaseConnectionConfig };
+export type { RedisConfig };
 
 export interface AppOptions {
   /** 源代码目录，默认自动扫描 controller/, service/, mapper/ */
@@ -31,6 +34,25 @@ export interface AppOptions {
   prefix?: string;
   /** 数据库配置 */
   database?: DatabaseConnectionConfig;
+  /**
+   * Redis 缓存配置（对应 Spring Boot spring.data.redis.*）
+   *
+   * 提供此选项时，createApp 会自动调用 initializeCaching() 验证 Redis 连接；
+   * 连接失败则抛出 CacheInitializationError 并阻止启动。
+   *
+   * 也可以不传此选项，而在代码中用 @EnableCaching 装饰器注册配置，
+   * createApp 会自动检测并初始化。
+   *
+   * @example
+   * // 方式一：直接传入（类似 database 配置）
+   * createApp({ cache: { host: '127.0.0.1', port: 6379 } })
+   *
+   * // 方式二：使用 @EnableCaching 装饰器（在 createApp 调用前声明）
+   * @EnableCaching({ host: '127.0.0.1', port: 6379 })
+   * class AppConfig {}
+   * createApp({ ... })  // 自动检测并初始化
+   */
+  cache?: RedisConfig;
   /** 是否启用 CORS，默认 true */
   cors?: boolean;
   /** 是否打印详细日志，默认 true */
@@ -50,6 +72,7 @@ export async function createApp(options: AppOptions): Promise<Express> {
     srcDir, 
     prefix = '/api', 
     database,
+    cache,
     cors: enableCors = true, 
     verbose = true 
   } = options;
@@ -59,6 +82,29 @@ export async function createApp(options: AppOptions): Promise<Express> {
     await createKyselyDatabase(database);
     if (verbose) {
       console.log(`🗄️  [AI-First] Database: ${database.type}`);
+    }
+  }
+
+  // 初始化 Redis 缓存
+  // 支持两种用法（与 Spring Boot @EnableCaching 对应）：
+  //   1. createApp({ cache: { host, port } }) — 直接传入配置，等同于 database 的方式
+  //   2. 在代码中 @EnableCaching(config) 类装饰器 — createApp 自动检测并初始化
+  if (cache) {
+    // 方式一：直接传入 RedisConfig，initializeCaching 内部会注册配置并验证连接
+    await initializeCaching(cache);
+    if (verbose) {
+      const standaloneCache = cache as { host?: string; port?: number; mode?: string };
+      const isStandalone = standaloneCache.mode === undefined || standaloneCache.mode === 'standalone';
+      const desc = isStandalone
+        ? `${standaloneCache.host ?? '127.0.0.1'}:${standaloneCache.port ?? 6379}`
+        : standaloneCache.mode;
+      console.log(`🔴 [AI-First] Cache: Redis @ ${desc}`);
+    }
+  } else if (isCachingEnabled()) {
+    // 方式二：用户已通过 @EnableCaching 装饰器注册了配置，直接调用验证
+    await initializeCaching();
+    if (verbose) {
+      console.log(`🔴 [AI-First] Cache: Redis (via @EnableCaching)`);
     }
   }
 
