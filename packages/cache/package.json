@@ -1,7 +1,7 @@
 {
   "name": "@ai-first/cache",
   "version": "0.1.0",
-  "description": "AI-First Framework - Cache (Redis) with Spring Boot compatible decorators",
+  "description": "AI-First Framework - Cache with Spring Boot compatible decorators (Spring Cache + Spring Data Redis)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./redis": {
+      "import": "./dist/redis.js",
+      "types": "./dist/redis.d.ts"
     }
   },
   "files": [

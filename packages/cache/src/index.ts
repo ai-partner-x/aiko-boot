@@ -1,30 +1,24 @@
 /**
- * @ai-first/cache
+ * @ai-first/cache — Spring Cache 缓存抽象层
  *
- * Redis framework with Spring Boot compatible decorators
+ * 对标 Spring Cache，提供统一的缓存抽象与注解：
+ * - @Cacheable — 缓存方法返回值（读通缓存）
+ * - @CachePut  — 执行方法并更新缓存（写通缓存）
+ * - @CacheEvict — 清除缓存
+ * - initializeCaching(config) — 启动时验证 Redis 连接
+ *
+ * Redis 连接管理与 RedisTemplate 等数据访问 API 位于：
+ * @see @ai-first/cache/redis
+ *
+ * 对应 Spring 中:
+ * ```
+ * import org.springframework.cache.annotation.Cacheable;
+ * import org.springframework.cache.annotation.CachePut;
+ * import org.springframework.cache.annotation.CacheEvict;
+ * ```
  */
 
-// Config
-export {
-  createRedisConnection,
-  getRedisClient,
-  getRedisConfig,
-  closeRedisConnection,
-  isRedisInitialized,
-  type RedisConfig,
-  type RedisStandaloneConfig,
-  type RedisSentinelConfig,
-  type RedisClusterConfig,
-} from './config.js';
-
-// RedisTemplate
-export {
-  RedisTemplate,
-  StringRedisTemplate,
-  type RedisTemplateOptions,
-} from './redis-template.js';
-
-// Decorators
+// ==================== Cache Decorators (Spring Cache) ====================
 export {
   Cacheable,
   CachePut,
@@ -39,21 +33,12 @@ export {
   type CacheKeyGenerator,
 } from './decorators.js';
 
-// Enable Caching — initializeCaching() startup validation
+// ==================== Startup Validation ====================
 export {
   initializeCaching,
   CacheInitializationError,
 } from './enable-caching.js';
 
-// DI convenience re-exports — 配合 @Autowired 属性注入使用
+// ==================== DI convenience re-export ====================
+// 配合 @Cacheable/@CachePut/@CacheEvict 服务类中的 @Autowired 属性注入使用
 export { Autowired } from '@ai-first/di/server';
-
-// Operations
-export type { ValueOperations } from './operations/value-operations.js';
-export type { ListOperations } from './operations/list-operations.js';
-export type { HashOperations } from './operations/hash-operations.js';
-export type { SetOperations } from './operations/set-operations.js';
-export type { ZSetOperations, TypedTuple } from './operations/zset-operations.js';
-
-// Adapters
-export { IORedisAdapter, type IORedisAdapterOptions, type RedisSerializer } from './adapters/index.js';

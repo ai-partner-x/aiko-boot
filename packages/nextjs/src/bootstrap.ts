@@ -22,7 +22,8 @@ import { createExpressRouter } from './express-router.js';
 import { getControllerMetadata } from './decorators.js';
 import { Injectable, Singleton } from '@ai-first/di/server';
 import { createKyselyDatabase, type DatabaseConnectionConfig } from '@ai-first/orm';
-import { initializeCaching, type RedisConfig } from '@ai-first/cache';
+import { initializeCaching } from '@ai-first/cache';
+import { type RedisConfig } from '@ai-first/cache/redis';
 
 export type { DatabaseConnectionConfig };
 export type { RedisConfig };
