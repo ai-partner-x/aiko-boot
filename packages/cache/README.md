@@ -433,6 +433,217 @@ setCacheManager(new MapCacheManager());
 
 ---
 
+## 完整示例：createApp + SQLite + 声明式缓存
+
+以下示例展示如何用 `createApp` 搭建一个真实的 API 服务：底层使用 **SQLite 持久化**（`@ai-first/orm`），上层使用 **声明式缓存注解** 降低数据库访问压力，Redis 可选接入（未配置时缓存装饰器自动降级）。完整源码见 [`app/examples/cache-example`](../../app/examples/cache-example)。
+
+### 目录结构
+
+```
+src/
+├── controller/
+│   └── user.controller.ts       # @RestController — REST CRUD 路由
+├── entity/
+│   ├── user.entity.ts           # @Entity + @TableId + @TableField
+│   └── user.repository.ts       # @Mapper + BaseMapper<User>（SQLite）
+├── service/
+│   └── user.cache.service.ts    # @Service + @Cacheable/@CachePut/@CacheEvict
+├── scripts/
+│   └── init-db.ts               # SQLite 建表 + 种子数据
+└── server.ts                    # createApp 入口
+```
+
+### 1. 实体定义（`@Entity`）
+
+```typescript
+// src/entity/user.entity.ts
+import { Entity, TableId, TableField } from '@ai-first/orm';
+
+@Entity({ tableName: 'cache_user' })
+export class User {
+  @TableId({ type: 'AUTO' })
+  id!: number;
+
+  @TableField()
+  name!: string;
+
+  @TableField()
+  email!: string;
+
+  @TableField()
+  age?: number;
+}
+```
+
+### 2. Mapper 层（`@Mapper + BaseMapper`）
+
+```typescript
+// src/entity/user.repository.ts
+import { Mapper, BaseMapper } from '@ai-first/orm';
+import { User } from './user.entity.js';
+
+@Mapper(User)
+export class UserRepository extends BaseMapper<User> {
+  async findByEmail(email: string): Promise<User | null> {
+    const list = await this.selectList({ email } as Partial<User>);
+    return list.length > 0 ? list[0] : null;
+  }
+}
+```
+
+### 3. 缓存服务（`@Cacheable / @CachePut / @CacheEvict`）
+
+```typescript
+// src/service/user.cache.service.ts
+import { Service } from '@ai-first/core';
+import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
+import { User } from '../entity/user.entity.js';
+import { UserRepository } from '../entity/user.repository.js';
+
+@Service({ name: 'UserCacheService' })
+export class UserCacheService {
+  @Autowired()
+  private userRepository!: UserRepository;   // SQLite via @Mapper + BaseMapper
+
+  @Cacheable({ key: 'user', ttl: 300 })
+  async getUserById(id: number): Promise<User | null> {
+    return this.userRepository.selectById(id);   // Redis 命中时跳过 DB
+  }
+
+  @Cacheable({ key: 'user:list', ttl: 60 })
+  async getUserList(): Promise<User[]> {
+    return this.userRepository.selectList();
+  }
+
+  @CacheEvict({ key: 'user:list', allEntries: true })
+  async createUser(data: Omit<User, 'id'>): Promise<User> {
+    return this.userRepository.insert(data);
+  }
+
+  @CachePut({ key: 'user', ttl: 300, keyGenerator: (id: unknown) => String(id) })
+  async updateUser(id: number, data: Partial<Omit<User, 'id'>>): Promise<User> {
+    const existing = await this.userRepository.selectById(id);
+    if (!existing) throw new Error(`用户 ${id} 不存在`);
+    return this.userRepository.updateById({ ...existing, ...data });
+  }
+
+  @CacheEvict({ key: 'user' })
+  async deleteUser(id: number): Promise<boolean> {
+    return this.userRepository.deleteById(id);
+  }
+}
+```
+
+### 4. REST 控制器（`@RestController`）
+
+```typescript
+// src/controller/user.controller.ts
+import {
+  RestController, GetMapping, PostMapping, PutMapping, DeleteMapping,
+  PathVariable, RequestBody,
+} from '@ai-first/nextjs';
+import { Autowired } from '@ai-first/di/server';
+import { User } from '../entity/user.entity.js';
+import { UserCacheService } from '../service/user.cache.service.js';
+
+@RestController({ path: '/users' })
+export class UserController {
+  @Autowired()
+  private userCacheService!: UserCacheService;
+
+  @GetMapping()
+  list(): Promise<User[]> {
+    return this.userCacheService.getUserList();          // @Cacheable user:list
+  }
+
+  @GetMapping('/:id')
+  getById(@PathVariable('id') id: string): Promise<User | null> {
+    return this.userCacheService.getUserById(Number(id)); // @Cacheable user
+  }
+
+  @PostMapping()
+  create(@RequestBody() body: Omit<User, 'id'>): Promise<User> {
+    return this.userCacheService.createUser(body);        // @CacheEvict user:list
+  }
+
+  @PutMapping('/:id')
+  update(
+    @PathVariable('id') id: string,
+    @RequestBody() body: Partial<Omit<User, 'id'>>
+  ): Promise<User> {
+    return this.userCacheService.updateUser(Number(id), body); // @CachePut user
+  }
+
+  @DeleteMapping('/:id')
+  async delete(@PathVariable('id') id: string): Promise<{ success: boolean }> {
+    return { success: await this.userCacheService.deleteUser(Number(id)) }; // @CacheEvict user
+  }
+}
+```
+
+### 5. API 服务器入口（`createApp`）
+
+```typescript
+// src/server.ts
+import 'reflect-metadata';
+import { createApp } from '@ai-first/nextjs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { type CacheConfig } from '@ai-first/cache';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PORT        = process.env.PORT        || 3002;
+const REDIS_HOST  = process.env.REDIS_HOST;
+const REDIS_PORT  = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379;
+// 空字符串通过 || undefined 统一转为 undefined，与无密码模式等价
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
+
+const cacheConfig: CacheConfig | undefined = REDIS_HOST
+  ? { type: 'redis', host: REDIS_HOST, port: REDIS_PORT, password: REDIS_PASSWORD }
+  : undefined;
+
+const app = await createApp({
+  srcDir: __dirname,
+  database: {
+    type: 'sqlite',
+    filename: join(__dirname, '../data/cache_example.db'),
+  },
+  ...(cacheConfig ? { cache: cacheConfig } : {}),
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`📚 API: http://localhost:${PORT}/api/users`);
+});
+```
+
+### 启动方式
+
+```bash
+# 1. 初始化数据库（只需执行一次）
+pnpm init-db
+
+# 2. 启动 API 服务器（无 Redis，缓存装饰器自动降级）
+pnpm server
+
+# 3. 启动 API 服务器（有 Redis，启用缓存）
+REDIS_HOST=127.0.0.1 REDIS_PORT=6379 pnpm server
+```
+
+### 接口一览
+
+| 方法 | 路径 | 缓存行为 |
+|---|---|---|
+| `GET` | `/api/users` | `@Cacheable(user:list, 60s)` |
+| `GET` | `/api/users/:id` | `@Cacheable(user, 300s)` |
+| `POST` | `/api/users` | `@CacheEvict(user:list)` |
+| `PUT` | `/api/users/:id` | `@CachePut(user, 300s)` |
+| `DELETE` | `/api/users/:id` | `@CacheEvict(user)` |
+
+> **提示**：未设置 `REDIS_HOST` 时，缓存装饰器透传原方法，每次请求直接访问 SQLite，无需 Redis 即可本地开发调试。
+
+---
+
 ## License
 
 MIT
