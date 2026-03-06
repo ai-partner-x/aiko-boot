@@ -6,6 +6,9 @@
  * - @CachePut 写通缓存（更新）
  * - @CacheEvict 缓存失效（创建/删除）
  *
+ * 底层数据访问通过 UserRepository（@Mapper + BaseMapper）读写 SQLite，
+ * Redis 缓存命中时跳过 DB 访问。
+ *
  * 对应 Java Spring Boot:
  * @Service
  * public class UserCacheService {
@@ -19,7 +22,7 @@
 
 import { Service } from '@ai-first/core';
 import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
-import { type User } from '../entity/user.entity.js';
+import { User } from '../entity/user.entity.js';
 import { UserRepository } from '../entity/user.repository.js';
 
 /**
@@ -47,7 +50,7 @@ export class UserCacheService {
   @Cacheable({ key: 'user', ttl: 300 })
   async getUserById(id: number): Promise<User | null> {
     console.log(`  [DB] 查询数据库: getUserById(${id})`);
-    return this.userRepository.findById(id);
+    return this.userRepository.selectById(id);
   }
 
   /**
@@ -59,7 +62,7 @@ export class UserCacheService {
   @Cacheable({ key: 'user:list', ttl: 60 })
   async getUserList(): Promise<User[]> {
     console.log('  [DB] 查询数据库: getUserList()');
-    return this.userRepository.findAll();
+    return this.userRepository.selectList();
   }
 
   /**
@@ -71,7 +74,7 @@ export class UserCacheService {
   @CacheEvict({ key: 'user:list', allEntries: true })
   async createUser(data: Omit<User, 'id'>): Promise<User> {
     console.log('  [DB] 写入数据库: createUser()');
-    return this.userRepository.save(data);
+    return this.userRepository.insert(data);
   }
 
   /**
@@ -83,7 +86,10 @@ export class UserCacheService {
   @CachePut({ key: 'user', ttl: 300, keyGenerator: (id: unknown) => String(id as number) })
   async updateUser(id: number, data: Partial<Omit<User, 'id'>>): Promise<User> {
     console.log(`  [DB] 更新数据库: updateUser(${id})`);
-    return this.userRepository.update(id, data);
+    const existing = await this.userRepository.selectById(id);
+    if (!existing) throw new Error(`用户 ${id} 不存在`);
+    const updated: User = { ...existing, ...data };
+    return this.userRepository.updateById(updated);
   }
 
   /**
@@ -95,6 +101,6 @@ export class UserCacheService {
   @CacheEvict({ key: 'user' })
   async deleteUser(id: number): Promise<boolean> {
     console.log(`  [DB] 删除数据库: deleteUser(${id})`);
-    return this.userRepository.remove(id);
+    return this.userRepository.deleteById(id);
   }
 }

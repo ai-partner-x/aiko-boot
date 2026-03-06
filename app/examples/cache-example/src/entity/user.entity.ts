@@ -1,16 +1,28 @@
 /**
  * 用户实体
  *
- * TypeScript:
- * interface User { ... }
+ * 使用 @ai-first/orm 的 @Entity/@TableId/@TableField 装饰器，
+ * 对应 SQLite 表 cache_user。
  *
- * 对应 Java:
+ * 对应 Java Spring Boot:
+ * @Entity
+ * @Table(name = "cache_user")
  * public class User { ... }
  */
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  age: number;
+import { Entity, TableId, TableField } from '@ai-first/orm';
+
+@Entity({ tableName: 'cache_user' })
+export class User {
+  @TableId({ type: 'AUTO' })
+  id!: number;
+
+  @TableField()
+  name!: string;
+
+  @TableField()
+  email!: string;
+
+  @TableField()
+  age?: number;
 }
