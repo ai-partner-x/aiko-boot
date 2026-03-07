@@ -23,6 +23,8 @@ import {
   getRequestBody,
   getRequestParams,
   getRequestParts,
+  getModelAttributes,
+  getRequestAttributes,
   type MultipartFile,
 } from './decorators.js';
 import { Router, IRouter } from 'express';
@@ -56,6 +58,7 @@ type AnyRequest  = {
   body: any;
   file?: MulterFile;
   files?: Record<string, MulterFile[]>;
+  [key: string]: any;
 };
 type AnyResponse = { json: (data: any) => void; status: (code: number) => AnyResponse };
 type NextFn      = (err?: any) => void;
@@ -141,10 +144,12 @@ function registerController(
       console.log(`[AI-First] ${httpMethod.toUpperCase().padEnd(7)} ${fullPath}`);
     }
 
-    const pathVars    = getPathVariables(ControllerClass.prototype, methodName);
-    const bodyParams  = getRequestBody(ControllerClass.prototype, methodName);
-    const queryParams = getRequestParams(ControllerClass.prototype, methodName);
-    const partParams  = getRequestParts(ControllerClass.prototype, methodName);
+    const pathVars        = getPathVariables(ControllerClass.prototype, methodName);
+    const bodyParams      = getRequestBody(ControllerClass.prototype, methodName);
+    const queryParams     = getRequestParams(ControllerClass.prototype, methodName);
+    const partParams      = getRequestParts(ControllerClass.prototype, methodName);
+    const modelAttrs      = getModelAttributes(ControllerClass.prototype, methodName);
+    const requestAttrs    = getRequestAttributes(ControllerClass.prototype, methodName);
 
     // Build multer middleware when the handler has @RequestPart parameters
     const uploadMiddleware = Object.keys(partParams).length > 0
@@ -185,6 +190,21 @@ function registerController(
           if (multerFile) {
             args[Number(idx)] = createMultipartFile(multerFile);
           }
+        }
+
+        // 注入 @ModelAttribute (合并 query + body 表单字段)
+        for (const idx of Object.keys(modelAttrs)) {
+          const queryObj = req.query || {};
+          const bodyObj  = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body))
+            ? req.body
+            : {};
+          args[Number(idx)] = { ...queryObj, ...bodyObj };
+        }
+
+        // 注入 @RequestAttribute (Express req 对象上的自定义属性)
+        for (const [idx, attr] of Object.entries(requestAttrs)) {
+          const { name } = attr as { name: string };
+          args[Number(idx)] = req[name];
         }
 
         const result = await controllerMethod.apply(instance, args);

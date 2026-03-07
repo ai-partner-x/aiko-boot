@@ -41,6 +41,8 @@ pnpm add @ai-first/nextjs
 | `@QueryParam(name?, required?)` | `@RequestParam` | `@RequestParam` 的别名 |
 | `@RequestBody()` | `@RequestBody` | 提取请求体（JSON） |
 | `@RequestPart(name?)` | `@RequestPart` | 提取 `multipart/form-data` 中的文件字段，自动注入 `MultipartFile` 对象 |
+| `@ModelAttribute(name?)` | `@ModelAttribute` | 将 URL 查询参数与表单字段合并为一个对象注入（适合搜索 DTO、form 表单绑定） |
+| `@RequestAttribute(name)` | `@RequestAttribute` | 从 Express `req` 对象上读取由上游中间件设置的自定义属性（如 `req.currentUser`） |
 
 ### 文件上传（File Upload）
 
@@ -134,6 +136,50 @@ export class FileController {
     await file.transferTo('/uploads/' + file.getOriginalFilename());
 
     return { filename: file.getOriginalFilename(), size: file.getSize() };
+  }
+}
+```
+
+```typescript
+// 表单绑定示例（Spring Boot @ModelAttribute 风格）
+import { RestController, GetMapping, PostMapping, ModelAttribute } from '@ai-first/nextjs';
+
+interface SearchDto { keyword: string; page: string; size: string; }
+interface RegisterDto { username: string; email: string; }
+
+@RestController({ path: '/users' })
+export class UserController {
+  // GET /api/users/search?keyword=hello&page=1&size=10
+  // query params → SearchDto
+  @GetMapping('/search')
+  async search(@ModelAttribute() query: SearchDto) {
+    return this.userService.search(query);
+  }
+
+  // POST /api/users/register  (application/x-www-form-urlencoded)
+  // form fields → RegisterDto
+  @PostMapping('/register')
+  async register(@ModelAttribute('user') dto: RegisterDto) {
+    return this.userService.register(dto);
+  }
+}
+```
+
+```typescript
+// 请求属性注入示例（Spring Boot @RequestAttribute 风格）
+import { RestController, GetMapping, RequestAttribute } from '@ai-first/nextjs';
+
+// 1. 在 Express 中间件中设置 req.currentUser
+// app.use((req, res, next) => {
+//   (req as any).currentUser = jwtDecode(req.headers.authorization);
+//   next();
+// });
+
+@RestController({ path: '/profile' })
+export class ProfileController {
+  @GetMapping()
+  async me(@RequestAttribute('currentUser') user: { id: number; name: string }) {
+    return user;  // 直接返回中间件注入的用户对象
   }
 }
 ```
@@ -273,32 +319,15 @@ async me(@CookieValue('sessionId') sessionId: string) {
 
 处理 `multipart/form-data` 上传请求，提取文件字段，自动注入 `MultipartFile` 对象。详见"已实现的功能"章节。
 
-#### 10. `@ModelAttribute` ⭐⭐
+#### 10. `@ModelAttribute` ⭐⭐ ✅ 已实现
 **对应 Java**：`@ModelAttribute`
 
-作为参数装饰器时，将请求参数绑定为一个对象（相对于 `@RequestBody` 的 JSON，`@ModelAttribute` 处理 form 表单或 URL 查询参数组合）。
+作为参数装饰器时，将 URL 查询参数与表单 body 字段合并为一个对象注入。详见"已实现的功能"章节。
 
-```typescript
-// 期望实现
-@GetMapping('/search')
-async search(@ModelAttribute() query: SearchDto) {
-  // SearchDto 的各字段从 URL 查询参数中自动绑定
-  return this.userService.search(query);
-}
-```
-
-#### 11. `@RequestAttribute` ⭐
+#### 11. `@RequestAttribute` ⭐ ✅ 已实现
 **对应 Java**：`@RequestAttribute("userId")`
 
-提取由 Filter 或 Interceptor 预先设置在 request 上的属性。常用于认证中间件将用户信息注入请求上下文。
-
-```typescript
-// 期望实现
-@GetMapping('/profile')
-async profile(@RequestAttribute('currentUser') user: User) {
-  return user;
-}
-```
+提取由上游 Express 中间件预先挂载在 `req` 对象上的自定义属性。详见"已实现的功能"章节。
 
 #### 12. `@SessionAttribute` ⭐
 **对应 Java**：`@SessionAttribute("cart")`
@@ -537,7 +566,7 @@ async stream(@Req() req: Request, @Res() res: Response) {
 | 类装饰器 | `@RestController` | `@Controller`、`@RestControllerAdvice`、`@ControllerAdvice` |
 | 方法映射装饰器 | `@RequestMapping`、`@GetMapping`、`@PostMapping`、`@PutMapping`、`@DeleteMapping`、`@PatchMapping` | `produces`/`consumes` 选项 |
 | 方法装饰器 | — | `@ResponseStatus`、`@ExceptionHandler`、`@CrossOrigin`、`@InitBinder` |
-| 参数装饰器 | `@PathVariable`、`@RequestParam`、`@RequestBody`、`@RequestPart` | `@RequestHeader`、`@CookieValue`、`@ModelAttribute`、`@RequestAttribute`、`@SessionAttribute`、`@MatrixVariable`、`@Req`/`@Res` |
+| 参数装饰器 | `@PathVariable`、`@RequestParam`、`@RequestBody`、`@RequestPart`、`@ModelAttribute`、`@RequestAttribute` | `@RequestHeader`、`@CookieValue`、`@SessionAttribute`、`@MatrixVariable`、`@Req`/`@Res` |
 | 请求验证 | — | `@Valid`/`@Validated` + `@ai-first/validation` 集成 |
 | 响应抽象 | — | `ResponseEntity<T>`、`HttpStatus` 枚举 |
 | 拦截器/过滤器 | — | `HandlerInterceptor`、`WebMvcConfigurer`、`Filter` |

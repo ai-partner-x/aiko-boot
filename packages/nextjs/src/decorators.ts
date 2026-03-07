@@ -12,6 +12,8 @@ const PATH_VARIABLE_METADATA = Symbol('pathVariable');
 const REQUEST_PARAM_METADATA = Symbol('requestParam');
 const REQUEST_BODY_METADATA = Symbol('requestBody');
 const REQUEST_PART_METADATA = Symbol('requestPart');
+const MODEL_ATTRIBUTE_METADATA = Symbol('modelAttribute');
+const REQUEST_ATTRIBUTE_METADATA = Symbol('requestAttribute');
 
 /** 导出供 ApiContract 复用的元数据 key */
 export { CONTROLLER_METADATA, REQUEST_MAPPING_METADATA };
@@ -222,7 +224,68 @@ export function RequestPart(name?: string) {
   };
 }
 
-// ==================== Metadata Getters ====================
+// ==================== Model Binding & Request Attributes ====================
+
+/**
+ * @ModelAttribute - Bind all request query parameters and form body fields into a
+ * plain object parameter (like Spring Boot @ModelAttribute).
+ *
+ * The decorated parameter receives a merged flat object of `req.query` and `req.body`
+ * (suitable for URL query-string search DTOs and `application/x-www-form-urlencoded`
+ * form submissions).  The optional `name` argument is stored for documentation /
+ * introspection purposes but is not used during binding — the entire merged object is
+ * always passed.
+ *
+ * @param name - Optional logical name (mirrors Spring's model attribute name)
+ *
+ * @example
+ * @GetMapping('/search')
+ * async search(@ModelAttribute() query: SearchDto) {
+ *   // query.keyword, query.page, query.size … all populated from URL params
+ *   return this.userService.search(query);
+ * }
+ *
+ * @example
+ * @PostMapping('/register')
+ * async register(@ModelAttribute('user') dto: RegisterDto) {
+ *   // dto populated from application/x-www-form-urlencoded body
+ *   return this.authService.register(dto);
+ * }
+ */
+export function ModelAttribute(name?: string) {
+  return function (target: any, propertyKey: string, parameterIndex: number) {
+    const modelAttrs = Reflect.getMetadata(MODEL_ATTRIBUTE_METADATA, target, propertyKey) || {};
+    modelAttrs[parameterIndex] = { name: name || '' };
+    Reflect.defineMetadata(MODEL_ATTRIBUTE_METADATA, modelAttrs, target, propertyKey);
+  };
+}
+
+/**
+ * @RequestAttribute - Extract a named attribute set on the Express request object
+ * by upstream middleware (like Spring Boot @RequestAttribute).
+ *
+ * Middlewares typically attach custom properties directly to the `req` object
+ * (e.g. `req.user`, `req.tenantId`).  This decorator reads `(req as any)[name]`
+ * and injects the value into the controller parameter.
+ *
+ * @param name - The property name on the Express request object
+ *
+ * @example
+ * // In Express middleware:
+ * // app.use((req, res, next) => { (req as any).currentUser = { id: 1 }; next(); });
+ *
+ * @GetMapping('/profile')
+ * async profile(@RequestAttribute('currentUser') user: User) {
+ *   return user;
+ * }
+ */
+export function RequestAttribute(name: string) {
+  return function (target: any, propertyKey: string, parameterIndex: number) {
+    const reqAttrs = Reflect.getMetadata(REQUEST_ATTRIBUTE_METADATA, target, propertyKey) || {};
+    reqAttrs[parameterIndex] = { name };
+    Reflect.defineMetadata(REQUEST_ATTRIBUTE_METADATA, reqAttrs, target, propertyKey);
+  };
+}
 
 export function getControllerMetadata(target: any): RestControllerOptions | undefined {
   return Reflect.getMetadata(CONTROLLER_METADATA, target);
@@ -246,4 +309,12 @@ export function getRequestBody(target: any, methodName: string): Record<number, 
 
 export function getRequestParts(target: any, methodName: string): Record<number, { name: string }> {
   return Reflect.getMetadata(REQUEST_PART_METADATA, target, methodName) || {};
+}
+
+export function getModelAttributes(target: any, methodName: string): Record<number, { name: string }> {
+  return Reflect.getMetadata(MODEL_ATTRIBUTE_METADATA, target, methodName) || {};
+}
+
+export function getRequestAttributes(target: any, methodName: string): Record<number, { name: string }> {
+  return Reflect.getMetadata(REQUEST_ATTRIBUTE_METADATA, target, methodName) || {};
 }
