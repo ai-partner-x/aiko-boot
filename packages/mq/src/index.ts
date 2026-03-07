@@ -1,49 +1,33 @@
 /**
  * @ai-first/mq
- * Spring Boot 风格 MQ：MqTemplate + @MqListener，配置切换实现（rabbit/memory），业务代码不变
+ *
+ * MQ 模块，Spring Boot 风格的消息队列
+ * 支持 RabbitMQ，可扩展 Kafka / Redis
  */
 
-export type {
-  MQMessage,
-  PublishOptions,
-  ConsumeOptions,
-  ConsumeContext,
-  MQConnectionOptions,
-  RabbitMQConnectionOptions,
-  IMQConnection,
-  IMQProducer,
-  IMQConsumer,
-  IMQClient,
-  MessageProperties,
-  Message,
-} from './types.js';
+// Config
+export type { MqProperties } from './config/MqProperties.js';
+export { loadMqProperties } from './config/MqProperties.js';
+export { MqAutoConfiguration } from './config/MqAutoConfiguration.js';
+export type { MqAdapter } from './config/MqAutoConfiguration.js';
 
-export { createMessage } from './types.js';
+// Decorators
+export { MqListener, getMqListenerMetadata } from './decorators/MqListener.js';
+export type { MqListenerOptions } from './decorators/MqListener.js';
+export { MqHandler, getMqHandlerMethods } from './decorators/MqHandler.js';
+export { Payload, getPayloadIndex } from './decorators/Payload.js';
 
-export { MemoryMQClient } from './adapter/memory-adapter.js';
-export { createRabbitMQClient } from './adapter/rabbit-adapter.js';
+// Producer
+export { MqTemplate } from './producer/MqTemplate.js';
+export type { MqProducer } from './producer/interfaces.js';
 
-export { MqTemplate } from './rabbit-template.js';
+// Consumer
+export type { MessageListener } from './consumer/MessageListener.js';
+export { ConsumerContainer } from './consumer/ConsumerContainer.js';
 
-export {
-  MqListener,
-  getRegisteredMqListenerClasses,
-  getMqListenerMetadata,
-  registerMqListeners,
-  type MqListenerMetadata,
-} from './listener.js';
+// Adapters
+export { RabbitMqAdapter } from './adapters/RabbitMqAdapter.js';
+export type { MqMessage, MqConsumeOptions } from './adapters/RabbitMqAdapter.js';
 
-export {
-  createMqFromConfig,
-  type MqConfig,
-  type MqConfigType,
-} from './config.js';
-
-export {
-  createMq,
-  getMqClient,
-  getMqTemplate,
-  getMqConfig,
-  closeMq,
-  isMqInitialized,
-} from './factory.js';
+// Logger
+export { logger } from './logger.js';
