@@ -573,7 +573,7 @@ async stream(@Req() req: Request, @Res() res: Response) {
 | 分页 | — | `Pageable`、`PageRequest`、`Page<T>` |
 | 安全（可选） | — | `@PreAuthorize`、`@CurrentUser` |
 | 文件上传 | `MultipartFile`、`@RequestPart`（multer 内存存储，自动挂载） | 多文件字段批量上传、磁盘存储配置 |
-| 异步 | 原生 `async/await` | `@Async` 后台任务 |
+| 异步 | 原生 `async/await`、`@Async`（`@ai-first/core`，fire-and-forget 后台任务） | — |
 | 框架引导 | `createApp`（扫描 controller/service/mapper） | 拦截器注册、静态资源、全局异常处理器 |
 
 ---

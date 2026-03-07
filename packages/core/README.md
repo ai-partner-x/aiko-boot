@@ -4,9 +4,8 @@ Core decorators and metadata system for AI-First Framework.
 
 ## Features
 
-- **Entity Layer Decorators**: `@Entity`, `@Field`, `@DbField`, `@Validation`
-- **Service Layer Decorators**: `@Repository`, `@Service`, `@AppService`
-- **Method Decorators**: `@Action`, `@Expose`, `@Transactional`
+- **Component decorators**: `@Component`, `@Service`
+- **Method decorators**: `@Transactional`, `@Async`
 - **Metadata System**: Built on `reflect-metadata` for runtime introspection
 
 ## Installation
@@ -17,51 +16,70 @@ pnpm add @ai-first/core
 
 ## Usage
 
-### Define Entity
+### `@Service` / `@Component`
 
 ```typescript
-import { Entity, Field, DbField, Validation } from '@ai-first/core';
-
-@Entity({ table: 'users', comment: 'User table' })
-export class User {
-  @Field({ label: 'ID' })
-  @DbField({ primaryKey: true, type: 'BIGINT' })
-  id: number;
-
-  @Field({ label: 'Username' })
-  @DbField({ type: 'VARCHAR', length: 50, unique: true })
-  @Validation({ required: true, min: 3, max: 50 })
-  username: string;
-
-  @Field({ label: 'Email' })
-  @Validation({ required: true, email: true })
-  email: string;
-}
-```
-
-### Define Service
-
-```typescript
-import { Service, AppService, Action, Expose } from '@ai-first/core';
+import { Service } from '@ai-first/core';
 
 @Service()
 export class UserService {
-  async findById(id: number) {
-    // Implementation
-  }
+  async findById(id: number) { /* ... */ }
 }
+```
 
-@AppService({ expose: true })
-export class UserAppService {
-  constructor(private userService: UserService) {}
+### `@Transactional`
 
-  @Action({ transaction: true })
-  @Expose({ method: 'POST', path: '/api/user/create' })
-  async createUser(data: CreateUserDto) {
-    return this.userService.create(data);
+```typescript
+import { Service, Transactional } from '@ai-first/core';
+
+@Service()
+export class OrderService {
+  @Transactional()
+  async placeOrder(dto: PlaceOrderDto) {
+    // runs inside a transaction context (logged start/commit/rollback)
   }
 }
 ```
+
+### `@Async` — Background Tasks (Spring Boot `@Async` equivalent)
+
+`@Async` turns a method into a **fire-and-forget** background task.  The caller
+receives `void` immediately and the original async logic is scheduled via
+`setImmediate`, detached from the caller's execution path.
+
+```typescript
+import { Service, Async } from '@ai-first/core';
+
+@Service()
+export class NotificationService {
+  @Async()
+  async sendWelcomeEmail(userId: number): Promise<void> {
+    // runs in the background — caller is NOT blocked
+    await this.mailer.send(userId);
+  }
+}
+```
+
+**Custom error handler** — uncaught errors inside a background task are sent to
+`console.error` by default.  Pass `onError` to override:
+
+```typescript
+@Async({ onError: (err, method) => logger.error({ method, err }) })
+async heavyReport(): Promise<void> { /* ... */ }
+```
+
+**Introspection** — check whether a method is async at runtime:
+
+```typescript
+import { isAsync, getAsyncOptions } from '@ai-first/core';
+
+isAsync(NotificationService.prototype, 'sendWelcomeEmail'); // true
+getAsyncOptions(NotificationService.prototype, 'sendWelcomeEmail'); // { onError?: ... }
+```
+
+> **Important**: `@Async` methods always return `void` from the caller's perspective.
+> Do **not** `await` an `@Async` method — the awaited value will always be
+> `undefined`.
 
 ## License
 

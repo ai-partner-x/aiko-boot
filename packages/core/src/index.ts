@@ -15,7 +15,10 @@ export {
   Component,
   Service,
   Transactional,
+  Async,
   getComponentMetadata,
   getServiceMetadata,
   isTransactional,
+  isAsync,
+  getAsyncOptions,
 } from './decorators.js';
