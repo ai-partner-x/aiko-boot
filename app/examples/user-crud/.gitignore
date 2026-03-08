@@ -19,6 +19,9 @@ packages/**/node_modules/
 dist/
 *.db
 
+# Java generated code
+packages/*/gen/
+
 # testing
 /coverage
 

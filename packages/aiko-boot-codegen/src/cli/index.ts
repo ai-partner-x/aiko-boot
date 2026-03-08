@@ -18,7 +18,7 @@ program
   .command('transpile')
   .description('Transpile TypeScript source files to Java')
   .argument('<source>', 'Source directory or file to transpile')
-  .option('-o, --out <dir>', 'Output directory for Java files', './java-output')
+  .option('-o, --out <dir>', 'Output directory for Java files', './gen')
   .option('-p, --package <name>', 'Java package name', 'com.example')
   .option('--lombok', 'Generate Lombok annotations', false)
   .option('--java-version <version>', 'Target Java version (11, 17, 21)', '17')
