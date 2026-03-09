@@ -1,5 +1,5 @@
 {
-  "name": "@app/cache-example",
+  "name": "@app/cache-crud",
   "version": "0.1.0",
   "private": true,
   "type": "module",

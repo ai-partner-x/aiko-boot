@@ -93,7 +93,7 @@ export async function initializeCaching(config: CacheConfig): Promise<void> {
 
     default: {
       throw new CacheInitializationError(
-        `[AI-First Cache] Unknown cache type: "${(config as { type: string }).type}". ` +
+        `[Aiko Boot Starter Cache] Unknown cache type: "${(config as { type: string }).type}". ` +
         `Supported types: 'redis'.`,
       );
     }
@@ -118,7 +118,7 @@ async function initializeRedisCaching(config: RedisConfig): Promise<void> {
     await validationClient.ping();
   } catch (error) {
     throw new CacheInitializationError(
-      `[AI-First Cache] Failed to connect to Redis at ${configDesc}. ` +
+      `[Aiko Boot Starter Cache] Failed to connect to Redis at ${configDesc}. ` +
       `Ensure Redis is running and the configuration is correct. ` +
       `Error: ${error instanceof Error ? error.message : String(error)}`,
       error,

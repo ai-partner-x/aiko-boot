@@ -43,7 +43,7 @@ import { UserCacheService } from './service/user.cache.service.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
-  console.log('=== @app/cache-example ===\n');
+  console.log('=== @app/cache-crud ===\n');
 
   // ==================== Spring Boot 风格自动配置启动 ====================
   //

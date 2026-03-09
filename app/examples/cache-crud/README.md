@@ -1,4 +1,4 @@
-# cache-example
+# cache-crud
 
 > 展示 `@ai-partner-x/aiko-boot-starter-cache` 在应用层的真实用法，包含两种运行模式：
 > - **`pnpm start`** — 独立脚本演示缓存装饰器行为
@@ -39,7 +39,7 @@ data/
 ### 一、初始化数据库（首次运行必须）
 
 ```bash
-cd app/examples/aiko-boot-starter-cache-example
+cd app/examples/aiko-boot-starter-cache-crud
 pnpm install
 pnpm init-db
 ```

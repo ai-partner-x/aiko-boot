@@ -1,7 +1,7 @@
 import type { AppConfig } from '@ai-partner-x/aiko-boot';
 
 /**
- * Cache-Example 配置文件（Spring Boot 风格）
+ * Cache-CRUD 配置文件（Spring Boot 风格）
  *
  * 配置风格参考 Spring Boot application.properties:
  * @see https://docs.spring.io/spring-boot/docs/current/reference/html/application-properties.html
