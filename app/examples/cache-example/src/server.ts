@@ -1,10 +1,10 @@
 /**
  * Cache-Example API Server — Spring Boot 风格自动配置
  *
- * 演示 @ai-first/cache 与 REST API 的集成：
+ * 演示 @ai-first/aiko-boot-starter-cache 与 REST API 的集成：
  * - createApp 自动扫描 mapper/ service/ controller/ 并注册到 DI 容器
  * - SQLite 提供持久化存储（@ai-first/orm + Kysely）
- * - 可选：通过环境变量启用 Redis 缓存（@ai-first/cache）
+ * - 可选：通过环境变量启用 Redis 缓存（@ai-first/aiko-boot-starter-cache）
  *
  * 运行前先初始化数据库：
  *   pnpm init-db
@@ -42,7 +42,7 @@ const REDIS_PORT     = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) :
 // 与无密码模式等价，不会被传入 ioredis 的 auth 流程。
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
 
-// 仅在配置了 REDIS_HOST 时才传入 cache 选项
+// 仅在配置了 REDIS_HOST 时才传入 aiko-boot-starter-cache 选项
 const cacheConfig: CacheConfig | undefined = REDIS_HOST
   ? { type: 'redis', host: REDIS_HOST, port: REDIS_PORT, password: REDIS_PASSWORD }
   : undefined;
@@ -59,7 +59,7 @@ const app = await createApp({
 app.listen(PORT, () => {
   const redisInfo = REDIS_HOST
     ? `Redis @ ${REDIS_HOST}:${REDIS_PORT}${REDIS_PASSWORD ? ' (auth)' : ''}`
-    : 'no Redis (cache decorators degrade gracefully)';
+    : 'no Redis (aiko-boot-starter-cache decorators degrade gracefully)';
   console.log(`\n🚀 Cache-Example API Server running at http://localhost:${PORT}`);
   console.log(`📚 Users API: http://localhost:${PORT}/api/users`);
   console.log(`🔴 Cache:     ${redisInfo}\n`);

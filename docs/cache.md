@@ -188,7 +188,7 @@ class StringRedisTemplate extends RedisTemplate<string, string> {}  // 字符串
 ### 安装
 
 ```bash
-pnpm add @ai-first/cache
+pnpm add @ai-first/aiko-boot-starter-cache
 ```
 
 ### 方式一：与 `createApp` 集成（推荐）
@@ -532,7 +532,7 @@ await listOps.set('queue', 0, 'updated');
 ```typescript
 const setOps = redisTemplate.opsForSet();
 
-await setOps.add('tags', 'redis', 'cache', 'nosql');
+await setOps.add('tags', 'redis', 'aiko-boot-starter-cache', 'nosql');
 const members = await setOps.members('tags');   // Set<string>
 const has = await setOps.isMember('tags', 'redis');
 const size = await setOps.size('tags');

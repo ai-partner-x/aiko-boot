@@ -45,7 +45,7 @@ yarn-error.log*
 .temp
 tmp
 
-# aiko-boot transformer cache
+# aiko-boot transformer aiko-boot-starter-cache
 .~*.ts
 
 # Java generated code (codegen output)

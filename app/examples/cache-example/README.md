@@ -39,7 +39,7 @@ data/
 ### 一、初始化数据库（首次运行必须）
 
 ```bash
-cd app/examples/cache-example
+cd app/examples/aiko-boot-starter-cache-example
 pnpm install
 pnpm init-db
 ```

@@ -1,7 +1,7 @@
 /**
  * Cache Example - 入口
  *
- * 演示 @ai-first/cache 的两种运行模式：
+ * 演示 @ai-first/aiko-boot-starter-cache 的两种运行模式：
  *
  * 模式一（REDIS_HOST 已配置）：initializeCaching(config) 验证 Redis 连接
  *   - 启动时调用 initializeCaching(config) 验证 Redis 连接（PING）
@@ -54,7 +54,7 @@ const REDIS_PORT = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 637
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined; // 空字符串视为"无密码"
 
 async function main() {
-  console.log('=== @app/cache-example ===\n');
+  console.log('=== @app/aiko-boot-starter-cache-example ===\n');
 
   // ==================== 数据库初始化 ====================
   //
@@ -76,7 +76,7 @@ async function main() {
   //   - 成功 → 缓存就绪，继续启动
   //   - 失败 → 抛出 CacheInitializationError（生产环境应在此 process.exit(1)）
   //
-  // 通常由 createApp({ cache: { host, port } }) 自动完成，
+  // 通常由 createApp({ aiko-boot-starter-cache: { host, port } }) 自动完成，
   // 此处为演示示例故手动调用。
   //
   // 对应 Spring Boot: ApplicationContext 启动时的 CacheManager bean 初始化检查
@@ -161,7 +161,7 @@ async function main() {
   console.log('');
 
   // ==================== RedisTemplate 直接操作（需要 Redis）====================
-  // Spring Data Redis 层：通过 @ai-first/cache/redis 导入 RedisTemplate
+  // Spring Data Redis 层：通过 @ai-first/aiko-boot-starter-cache/redis 导入 RedisTemplate
 
   if (REDIS_HOST) {
     const client = getRedisClient();

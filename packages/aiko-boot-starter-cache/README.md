@@ -203,7 +203,7 @@ class StringRedisTemplate extends RedisTemplate<string, string> {}  // 字符串
 ### 安装
 
 ```bash
-pnpm add @ai-first/cache
+pnpm add @ai-first/aiko-boot-starter-cache
 ```
 
 ### 方式一：与 `createApp` 集成（推荐）
@@ -494,7 +494,7 @@ export class UserRepository extends BaseMapper<User> {
 ### 3. 缓存服务（`@Cacheable / @CachePut / @CacheEvict`）
 
 ```typescript
-// src/service/user.cache.service.ts
+// src/service/user.aiko-boot-starter-cache.service.ts
 import { Service } from '@ai-first/core';
 import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
 import { User } from '../entity/user.entity.js';
@@ -544,7 +544,7 @@ import {
 } from '@ai-first/nextjs';
 import { Autowired } from '@ai-first/di/server';
 import { User } from '../entity/user.entity.js';
-import { UserCacheService } from '../service/user.cache.service.js';
+import { UserCacheService } from '../service/user.aiko-boot-starter-cache.service.js';
 
 @RestController({ path: '/users' })
 export class UserController {

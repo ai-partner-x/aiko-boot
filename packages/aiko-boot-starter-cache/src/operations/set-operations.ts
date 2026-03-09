@@ -6,7 +6,7 @@
  * @example
  * ```typescript
  * const ops = redisTemplate.opsForSet<string, string>();
- * await ops.add('tags:article:1', 'redis', 'cache', 'nosql');
+ * await ops.add('tags:article:1', 'redis', 'aiko-boot-starter-cache', 'nosql');
  * const tags = await ops.members('tags:article:1');
  * const hasTag = await ops.isMember('tags:article:1', 'redis');
  * ```

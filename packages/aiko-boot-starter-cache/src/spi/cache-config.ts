@@ -1,11 +1,11 @@
 /**
  * 通用缓存配置 — Spring Boot 风格的缓存后端选择
  *
- * 对应 Spring Boot `spring.cache.type` 属性：通过 `type` 字段决定启用哪个缓存后端，
+ * 对应 Spring Boot `spring.aiko-boot-starter-cache.type` 属性：通过 `type` 字段决定启用哪个缓存后端，
  * 具体后端配置直接内联在同一对象中，方便配置管理。
  *
  * 目前支持的后端：
- * - `'redis'` — Spring Data Redis（由 @ai-first/cache/redis 提供）
+ * - `'redis'` — Spring Data Redis（由 @ai-first/aiko-boot-starter-cache/redis 提供）
  *
  * 未来可扩展更多后端，只需在 CacheConfig 联合类型中添加新的成员即可，
  * 无需修改 initializeCaching / @Cacheable / @CachePut / @CacheEvict 等现有代码。
@@ -16,7 +16,7 @@
  *
  * await createApp({
  *   srcDir: import.meta.dirname,
- *   cache: {
+ *   aiko-boot-starter-cache: {
  *     type: 'redis',
  *     host: process.env.REDIS_HOST ?? '127.0.0.1',
  *     port: Number(process.env.REDIS_PORT ?? 6379),
@@ -28,7 +28,7 @@
  * ```typescript
  * await createApp({
  *   srcDir: import.meta.dirname,
- *   cache: {
+ *   aiko-boot-starter-cache: {
  *     type: 'redis',
  *     mode: 'sentinel',
  *     masterName: 'mymaster',
@@ -39,8 +39,8 @@
  *
  * @example 自定义后端（未来扩展示例）
  * ```typescript
- * import { setCacheManager } from '@ai-first/cache';
- * import { MyCustomCacheManager } from './my-cache-manager';
+ * import { setCacheManager } from '@ai-first/aiko-boot-starter-cache';
+ * import { MyCustomCacheManager } from './my-aiko-boot-starter-cache-manager';
  *
  * // 应用启动前手动注册自定义后端：
  * setCacheManager(new MyCustomCacheManager());
@@ -56,7 +56,7 @@ import type { RedisConfig } from '../config.js';
  *
  * 对应 Spring Boot：
  * ```
- * spring.cache.type=redis
+ * spring.aiko-boot-starter-cache.type=redis
  * spring.data.redis.host=127.0.0.1
  * spring.data.redis.port=6379
  * ```
@@ -71,7 +71,7 @@ export type RedisCacheConfig = { type: 'redis' } & RedisConfig;
 /**
  * 通用缓存配置 — 通过 `type` 字段选择后端
  *
- * 对应 Spring Boot 的 `spring.cache.type`。
+ * 对应 Spring Boot 的 `spring.aiko-boot-starter-cache.type`。
  *
  * 当前支持的 type 值：
  * - `'redis'` — 使用 Redis 缓存后端（Spring Data Redis）

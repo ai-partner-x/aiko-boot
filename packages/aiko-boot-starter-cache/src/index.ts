@@ -1,5 +1,5 @@
 /**
- * @ai-first/cache — Spring Cache 缓存抽象层
+ * @ai-first/aiko-boot-starter-cache — Spring Cache 缓存抽象层
  *
  * 对标 Spring Cache，提供统一的缓存抽象与注解：
  * - @Cacheable — 缓存方法返回值（读通缓存）
@@ -13,14 +13,14 @@
  * - getCacheManager() — 获取当前激活的后端
  *
  * Redis 连接管理与 RedisTemplate 等数据访问 API 位于：
- * @see @ai-first/cache/redis
+ * @see @ai-first/aiko-boot-starter-cache/redis
  *
  * 对应 Spring 中:
  * ```
- * import org.springframework.cache.annotation.Cacheable;
- * import org.springframework.cache.annotation.CachePut;
- * import org.springframework.cache.annotation.CacheEvict;
- * import org.springframework.cache.CacheManager;
+ * import org.springframework.aiko-boot-starter-cache.annotation.Cacheable;
+ * import org.springframework.aiko-boot-starter-cache.annotation.CachePut;
+ * import org.springframework.aiko-boot-starter-cache.annotation.CacheEvict;
+ * import org.springframework.aiko-boot-starter-cache.CacheManager;
  * ```
  */
 
@@ -30,7 +30,7 @@
 export type { Cache, CacheManager } from './spi/cache.js';
 
 // ==================== Cache Config (后端选择) ====================
-// CacheConfig 是 createApp({ cache: ... }) 接受的通用配置类型；
+// CacheConfig 是 createApp({ aiko-boot-starter-cache: ... }) 接受的通用配置类型；
 // 通过 type 字段（如 'redis'）决定初始化哪个后端。
 export type { CacheConfig, RedisCacheConfig } from './spi/cache-config.js';
 

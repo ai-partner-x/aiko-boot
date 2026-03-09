@@ -11,12 +11,12 @@
  * setCacheManager() 自由切换，无需修改业务代码。
  *
  * 使用方式：在类上使用 @Service / @Component（来自 @ai-first/core），
- * 方法上使用 @Cacheable / @CachePut / @CacheEvict（来自 @ai-first/cache）。
+ * 方法上使用 @Cacheable / @CachePut / @CacheEvict（来自 @ai-first/aiko-boot-starter-cache）。
  *
  * @example
  * ```typescript
  * import { Service } from '@ai-first/core';
- * import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/cache';
+ * import { Cacheable, CachePut, CacheEvict, Autowired } from '@ai-first/aiko-boot-starter-cache';
  *
  * @Service()
  * class UserCacheService {
