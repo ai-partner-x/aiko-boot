@@ -5,7 +5,7 @@
  */
 
 import * as React from 'react';
-import { cn, DataTable, type DataTableColumn, type DataTableProps } from '@aff/admin-component';
+import { cn, DataTable, type DataTableColumn, type DataTableProps } from '@aiko-boot/admin-component';
 
 // ===== 图标 =====
 const Icons = {

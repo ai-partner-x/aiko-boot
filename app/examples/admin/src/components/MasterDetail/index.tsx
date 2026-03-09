@@ -6,7 +6,7 @@
  */
 
 import { useState, type ReactNode } from 'react';
-import { cn, Input, Button } from '@aff/admin-component';
+import { cn, Input, Button } from '@aiko-boot/admin-component';
 
 // ===== 类型定义 =====
 

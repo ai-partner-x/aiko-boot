@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { cn, Input, Select, Label } from '@aff/admin-component';
+import { cn, Input, Select, Label } from '@aiko-boot/admin-component';
 
 // 图标
 const Icons = {

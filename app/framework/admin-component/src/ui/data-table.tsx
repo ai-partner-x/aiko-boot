@@ -1,5 +1,5 @@
 /**
- * AI-First Framework 数据表格组件
+ * Aiko Boot 数据表格组件
  * 基于 @tanstack/react-table
  */
 

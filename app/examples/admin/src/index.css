@@ -1,4 +1,4 @@
-/* AI-First Framework 72 字体 */
+/* Aiko Boot 72 字体 */
 @import url('https://ui5.sap.com/sdk/assets/fonts/72-Fonts.css');
 
 @tailwind base;
@@ -6,7 +6,7 @@
 @tailwind utilities;
 
 /**
- * AI-First Framework 主题变量
+ * Aiko Boot 主题变量
  * 基于 SAP Fiori Morning Horizon 设计规范
  */
 :root {

@@ -7,6 +7,7 @@ node_modules
 dist
 *.tsbuildinfo
 .turbo
+.next
 
 # Database files
 *.db
@@ -44,5 +45,8 @@ yarn-error.log*
 .temp
 tmp
 
-# AI-First transformer cache
+# aiko-boot transformer cache
 .~*.ts
+
+# Java generated code (codegen output)
+**/gen/

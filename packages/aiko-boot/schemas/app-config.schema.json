@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aiko-boot.dev/schemas/app-config.json",
+  "title": "Aiko Boot Configuration",
+  "description": "Configuration schema for @ai-partner-x/aiko-boot-starter applications",
+  "type": "object",
+  "properties": {
+    "server": {
+      "type": "object",
+      "description": "Web 服务器配置",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "default": 3001,
+          "description": "服务器端口号"
+        },
+        "prefix": {
+          "type": "string",
+          "default": "/api",
+          "description": "API 路径前缀"
+        },
+        "cors": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否启用 CORS 跨域支持"
+        },
+        "verbose": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否打印详细启动日志"
+        },
+        "gracefulShutdown": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否启用优雅关闭"
+        },
+        "maxBodySize": {
+          "type": "string",
+          "default": "10mb",
+          "description": "请求体大小限制"
+        },
+        "staticPath": {
+          "type": "string",
+          "description": "静态文件目录路径"
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "description": "数据库连接配置",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["sqlite", "postgres", "mysql"],
+          "description": "数据库类型"
+        },
+        "filename": {
+          "type": "string",
+          "description": "SQLite 数据库文件路径 (仅 sqlite 类型)"
+        },
+        "host": {
+          "type": "string",
+          "default": "localhost",
+          "description": "数据库主机地址 (postgres/mysql)"
+        },
+        "port": {
+          "type": "integer",
+          "description": "数据库端口 (postgres: 5432, mysql: 3306)"
+        },
+        "user": {
+          "type": "string",
+          "description": "数据库用户名"
+        },
+        "password": {
+          "type": "string",
+          "description": "数据库密码"
+        },
+        "database": {
+          "type": "string",
+          "description": "数据库名称"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "sqlite" } }
+          },
+          "then": {
+            "required": ["filename"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["postgres", "mysql"] } }
+          },
+          "then": {
+            "required": ["host", "port", "user", "database"]
+          }
+        }
+      ]
+    },
+    "validation": {
+      "type": "object",
+      "description": "验证配置",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否启用验证"
+        },
+        "failFast": {
+          "type": "boolean",
+          "default": false,
+          "description": "遇到第一个错误即停止验证"
+        },
+        "defaultMessage": {
+          "type": "string",
+          "default": "Validation failed",
+          "description": "默认验证错误消息"
+        },
+        "includeFieldNames": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否在错误消息中包含字段名"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "日志配置",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "日志级别"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["json", "text"],
+          "default": "text",
+          "description": "日志格式"
+        }
+      }
+    }
+  }
+}

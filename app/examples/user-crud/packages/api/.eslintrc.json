@@ -1,0 +1,15 @@
+{
+  "extends": ["plugin:@ai-partner-x/aiko-boot/java-compat"],
+  "rules": {
+    "@ai-partner-x/aiko-boot/no-arrow-methods": "error",
+    "@ai-partner-x/aiko-boot/no-destructuring-in-methods": "error",
+    "@ai-partner-x/aiko-boot/no-object-spread": "error",
+    "@ai-partner-x/aiko-boot/static-route-paths": "error",
+    "@ai-partner-x/aiko-boot/require-rest-controller": "error",
+    "@ai-partner-x/aiko-boot/no-optional-chaining-in-methods": "error",
+    "@ai-partner-x/aiko-boot/no-nullish-coalescing": "error",
+    "@ai-partner-x/aiko-boot/explicit-return-type": "error",
+    "@ai-partner-x/aiko-boot/no-union-types": "warn",
+    "@ai-partner-x/aiko-boot/no-inline-object-types": "error"
+  }
+}

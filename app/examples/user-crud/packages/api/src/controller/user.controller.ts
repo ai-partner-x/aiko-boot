@@ -10,11 +10,22 @@ import {
   DeleteMapping,
   PathVariable,
   RequestBody,
-} from '@ai-first/nextjs';
-import { Autowired } from '@ai-first/di/server';
+  RequestParam,
+} from '@ai-partner-x/aiko-boot-starter-web';
+import { Autowired } from '@ai-partner-x/aiko-boot';
 import { User } from '../entity/user.entity.js';
-import { UserService } from '../service/user.service.js';
-import { CreateUserDto, UpdateUserDto } from '../dto/user.dto.js';
+import { UserService, UserSearchParams } from '../service/user.service.js';
+import { 
+  CreateUserDto, 
+  UpdateUserDto,
+  BatchUpdateAgeDto,
+  UpdateEmailDto,
+  BatchDeleteDto,
+  SuccessResponse,
+  UpdateResponse,
+  DeleteResponse,
+  UserSearchResultDto,
+} from '../dto/user.dto.js';
 
 @RestController({ path: '/users' })
 export class UserController {
@@ -24,6 +35,60 @@ export class UserController {
   @GetMapping()
   async list(): Promise<User[]> {
     return this.userService.getAllUsers();
+  }
+
+  /**
+   * 高级搜索 - 使用 QueryWrapper
+   * 
+   * @example
+   * GET /api/users/search?username=test&minAge=20&maxAge=30&page=1&pageSize=10
+   */
+  @GetMapping('/search')
+  async search(
+    @RequestParam('username') username?: string,
+    @RequestParam('email') email?: string,
+    @RequestParam('minAge') minAge?: string,
+    @RequestParam('maxAge') maxAge?: string,
+    @RequestParam('page') page?: string,
+    @RequestParam('pageSize') pageSize?: string,
+    @RequestParam('orderBy') orderBy?: string,
+    @RequestParam('orderDir') orderDir?: string,
+  ): Promise<UserSearchResultDto> {
+    const params: UserSearchParams = {
+      username,
+      email,
+      minAge: minAge ? Number(minAge) : undefined,
+      maxAge: maxAge ? Number(maxAge) : undefined,
+      page: page ? Number(page) : 1,
+      pageSize: pageSize ? Number(pageSize) : 10,
+      orderBy: orderBy as UserSearchParams['orderBy'],
+      orderDir: orderDir as UserSearchParams['orderDir'],
+    };
+    
+    const result = await this.userService.searchUsers(params);
+    const response: UserSearchResultDto = {
+      data: result.data,
+      total: result.total,
+      page: params.page!,
+      pageSize: params.pageSize!,
+    };
+    return response;
+  }
+
+  /**
+   * 活跃用户查询 - QueryWrapper 示例
+   */
+  @GetMapping('/active')
+  async getActiveUsers(): Promise<User[]> {
+    return this.userService.getActiveUsers();
+  }
+
+  /**
+   * 关键字搜索 - OR 条件 QueryWrapper 示例
+   */
+  @GetMapping('/keyword/:keyword')
+  async searchByKeyword(@PathVariable('keyword') keyword: string): Promise<User[]> {
+    return this.userService.searchByKeyword(keyword);
   }
 
   @GetMapping('/:id')
@@ -45,8 +110,60 @@ export class UserController {
   }
 
   @DeleteMapping('/:id')
-  async delete(@PathVariable('id') id: string): Promise<{ success: boolean }> {
+  async delete(@PathVariable('id') id: string): Promise<SuccessResponse> {
     const result = await this.userService.deleteUser(Number(id));
-    return { success: result };
+    const response: SuccessResponse = { success: result };
+    return response;
+  }
+
+  // ==================== UpdateWrapper 示例端点 ====================
+
+  /**
+   * 批量更新年龄 - UpdateWrapper 示例
+   * 
+   * @example
+   * PUT /api/users/batch/age
+   * Body: { "username": "test", "age": 30 }
+   */
+  @PutMapping('/batch/age')
+  async batchUpdateAge(
+    @RequestBody() body: BatchUpdateAgeDto,
+  ): Promise<UpdateResponse> {
+    const updated = await this.userService.batchUpdateAge(body.username, body.age);
+    const response: UpdateResponse = { success: true, updated };
+    return response;
+  }
+
+  /**
+   * 更新用户邮箱 - UpdateWrapper 示例
+   * 
+   * @example
+   * PUT /api/users/1/email
+   * Body: { "email": "new@test.com" }
+   */
+  @PutMapping('/:id/email')
+  async updateEmail(
+    @PathVariable('id') id: string,
+    @RequestBody() body: UpdateEmailDto,
+  ): Promise<UpdateResponse> {
+    const updated = await this.userService.updateEmailById(Number(id), body.email);
+    const response: UpdateResponse = { success: true, updated };
+    return response;
+  }
+
+  /**
+   * 批量删除 - QueryWrapper 示例
+   * 
+   * @example
+   * DELETE /api/users/batch
+   * Body: { "minAge": 18, "maxAge": 25 }
+   */
+  @DeleteMapping('/batch')
+  async batchDelete(
+    @RequestBody() body: BatchDeleteDto,
+  ): Promise<DeleteResponse> {
+    const deleted = await this.userService.batchDeleteByAgeRange(body.minAge, body.maxAge);
+    const response: DeleteResponse = { success: true, deleted };
+    return response;
   }
 }

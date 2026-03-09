@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { cn, Input, Label, Select } from '@aff/admin-component';
+import { cn, Input, Label, Select } from '@aiko-boot/admin-component';
 import { MasterDetail, DetailSection, DetailField, DetailFieldGrid, type MasterDetailItem, type EditMode } from '../../../components/MasterDetail';
 
 // 采购组织图标

@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Select, Label } from '@aff/admin-component';
+import { Select, Label } from '@aiko-boot/admin-component';
 import { ObjectPage } from '../../components/ObjectPage';
 import { EditableTable, TableInput, TableText, type EditableTableColumn } from '../../components/EditableTable';
 

@@ -6,7 +6,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { ObjectPage } from '../../components/ObjectPage';
 import { EditableTable, TableText, TableFooterRow, type EditableTableColumn } from '../../components/EditableTable';
-import { cn } from '@aff/admin-component';
+import { cn } from '@aiko-boot/admin-component';
 
 // 图标
 const Icons = {

@@ -1,6 +1,6 @@
 /**
- * @aff/admin-component
- * AI-First Framework 管理端共享组件库
+ * @aiko-boot/admin-component
+ * Aiko Boot 管理端共享组件库
  */
 
 // 工具函数
@@ -17,7 +17,7 @@ export { Label } from './ui/label';
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './ui/table';
 export { Toaster } from './ui/sonner';
 
-// AI-First Framework 组件
+// Aiko Boot 组件
 export { DataTable, type DataTableProps, type DataTableColumn } from './ui/data-table';
 export {
   StatusChip,

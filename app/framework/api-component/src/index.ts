@@ -1,5 +1,5 @@
 /**
- * @aff/api-component
+ * @aiko-boot/api-component
  * API 共享组件/工具
  */
 

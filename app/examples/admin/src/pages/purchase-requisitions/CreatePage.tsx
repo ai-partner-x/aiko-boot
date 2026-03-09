@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn, Select, Input, Label } from '@aff/admin-component';
+import { cn, Select, Input, Label } from '@aiko-boot/admin-component';
 import { EditableTable, TableInput, TableSelect, TableText, TableDeleteButton, type EditableTableColumn } from '../../components/EditableTable';
 
 // 图标
