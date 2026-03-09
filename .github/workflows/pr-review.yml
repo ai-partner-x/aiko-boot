@@ -1,0 +1,73 @@
+name: PR Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run OpenCode Review
+        uses: anomalyco/opencode/github@latest
+        env:
+          BAILIAN_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: bailian/qwen3.5-plus
+          use_github_token: true
+          prompt: |
+            请审查这个 Pull Request：
+            
+            ## 审查要点
+            
+            ### 1. 代码质量
+            - 代码是否清晰易读
+            - 是否遵循项目的编码规范
+            - 是否有重复代码可以重构
+            
+            ### 2. 潜在问题
+            - 是否有潜在的 Bug 或逻辑错误
+            - 是否有安全风险（如 SQL 注入、XSS 等）
+            - 是否有性能问题
+            
+            ### 3. 最佳实践
+            - 是否遵循 TypeScript/JavaScript 最佳实践
+            - 是否正确使用了框架提供的功能
+            - 错误处理是否完善
+            
+            ### 4. 测试覆盖
+            - 是否需要添加单元测试
+            - 边界情况是否考虑
+            
+            ### 5. 文档
+            - 是否需要更新文档
+            - 注释是否清晰
+            
+            ## 输出格式
+            
+            请按以下格式输出审查结果：
+            
+            ### ✅ 优点
+            - 列出代码的优点
+            
+            ### ⚠️ 建议改进
+            - 列出需要改进的地方
+            
+            ### 🔴 必须修复
+            - 列出必须修复的问题
+            
+            ### 💡 建议
+            - 其他建议
+            
+            请用中文回复。
