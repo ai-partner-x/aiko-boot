@@ -67,6 +67,7 @@ const result = await db.insertInto('sys_user')
 |------|------|
 | 用户名 | `admin` |
 | 密码 | `Admin@123` |
+{"username":"admin","password":"Admin@123"}
 
 ## 相关文件
 
