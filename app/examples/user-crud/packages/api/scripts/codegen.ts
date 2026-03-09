@@ -1,3 +1,3 @@
-import { generateApiClient } from '@ai-first/codegen';
+import { generateApiClient } from '@ai-partner-x/aiko-boot-codegen';
 
 generateApiClient();

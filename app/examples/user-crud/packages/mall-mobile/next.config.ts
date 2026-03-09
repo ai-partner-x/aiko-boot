@@ -3,11 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   transpilePackages: [
     '@user-crud/api',
-    '@ai-first/nextjs',
-    '@ai-first/di',
-    '@ai-first/core',
-    '@ai-first/orm',
-    '@ai-first/validation',
+    '@ai-partner-x/aiko-boot-starter-web',
+    '@ai-partner-x/aiko-boot',
+    '@ai-partner-x/core',
+    '@ai-partner-x/aiko-boot-starter-orm',
+    '@ai-partner-x/aiko-boot-starter-validation',
   ],
 };
 

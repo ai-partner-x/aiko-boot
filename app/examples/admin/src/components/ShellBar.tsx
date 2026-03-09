@@ -1,11 +1,11 @@
 /**
- * AI-First Framework Shell Bar
+ * Aiko Boot Shell Bar
  * 现代化设计 - 更精致的顶部导航栏
  */
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { cn } from '@aff/admin-component';
+import { cn } from '@aiko-boot/admin-component';
 
 // 精致的 SVG 图标
 const Icons = {
@@ -89,7 +89,7 @@ export interface ShellBarProps {
 }
 
 export function ShellBar({
-  title = 'AI-First',
+  title = 'Aiko Boot',
   logo,
   userName = '用户',
   notificationCount = 3,

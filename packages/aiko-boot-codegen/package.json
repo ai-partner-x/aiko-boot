@@ -1,0 +1,33 @@
+{
+  "name": "@ai-partner-x/aiko-boot-codegen",
+  "version": "0.1.0",
+  "description": "TypeScript to Java code generator for Aiko Boot",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "aiko-codegen": "./dist/cli/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "glob": "^10.5.0",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/glob": "^9.0.0",
+    "@types/node": "^20.11.0"
+  }
+}

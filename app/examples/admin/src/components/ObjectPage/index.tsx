@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@aff/admin-component';
+import { cn } from '@aiko-boot/admin-component';
 
 // ============ 图标 ============
 const Icons = {

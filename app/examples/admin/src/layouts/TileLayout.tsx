@@ -17,7 +17,7 @@ import {
   Star,
   Clock,
 } from 'lucide-react';
-import { cn } from '@aff/admin-component';
+import { cn } from '@aiko-boot/admin-component';
 
 // 页面骨架屏组件
 const PageSkeleton = () => (
@@ -339,7 +339,7 @@ export function TileLayout({ onLayoutModeChange }: TileLayoutProps) {
           
           <div className="relative z-10">
             <h1 className="text-2xl font-semibold mb-2">
-              欢迎使用 AI-First 门户
+              欢迎使用 Aiko Boot 门户
             </h1>
             <p className="text-white/85 text-base mb-4">
               企业级应用统一入口 - 现代化、智能化、标准化

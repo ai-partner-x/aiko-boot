@@ -1,11 +1,11 @@
 /**
  * EditableTable 表单内嵌可编辑表格组件
  * 用于采购申请行项目、收货物料等场景
- * 注意：列表页请使用 @aff/admin-component 中的 DataTable
+ * 注意：列表页请使用 @aiko-boot/admin-component 中的 DataTable
  */
 
 import type { ReactNode } from 'react';
-import { cn, Select } from '@aff/admin-component';
+import { cn, Select } from '@aiko-boot/admin-component';
 
 // ============ 类型定义 ============
 export interface EditableTableColumn<T> {

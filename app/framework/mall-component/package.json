@@ -1,5 +1,5 @@
 {
-  "name": "@aff/mall-component",
+  "name": "@aiko-boot/mall-component",
   "version": "0.1.0",
   "private": true,
   "type": "module",

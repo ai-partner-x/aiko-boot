@@ -1,23 +1,20 @@
 /**
  * API Server - Spring Boot 风格自动配置
+ * 
+ * 配置文件: app.config.ts
+ * - server.port: 服务端口
+ * - server.servlet.contextPath: API 路径前缀
+ * - database.*: 数据库配置
+ * - validation.*: 验证配置
  */
-import { createApp } from '@ai-first/nextjs';
+import { createApp } from '@ai-partner-x/aiko-boot';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const PORT = process.env.PORT || 3001;
+// 创建应用（自动加载配置、扫描组件、配置 Express）
+const app = await createApp({ srcDir: __dirname });
 
-const app = await createApp({
-  srcDir: __dirname,
-  database: {
-    type: 'sqlite',
-    filename: join(__dirname, '../data/app.db'), // 本地 SQLite 文件
-  },
-});
-
-app.listen(PORT, () => {
-  console.log('\n🚀 API Server running at http://localhost:' + PORT);
-  console.log('📚 API: http://localhost:' + PORT + '/api/users\n');
-});
+// 启动 HTTP 服务器
+app.run();

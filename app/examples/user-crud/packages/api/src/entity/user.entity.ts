@@ -1,4 +1,4 @@
-import { Entity, TableId, TableField } from '@ai-first/orm';
+import { Entity, TableId, TableField } from '@ai-partner-x/aiko-boot-starter-orm';
 
 @Entity({ tableName: 'sys_user' })
 export class User {

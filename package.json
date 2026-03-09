@@ -1,8 +1,8 @@
 {
-  "name": "ai-first-framework",
+  "name": "aiko-boot",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-First Full-Stack Framework - Build with AI, Run Anywhere",
+  "description": "aiko-boot Full-Stack Framework - Build with AI, Run Anywhere",
   "type": "module",
   "engines": {
     "node": ">=18.0.0",
@@ -17,6 +17,7 @@
     "clean": "pnpm -r clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "@ai-partner-x/eslint-plugin-aiko-boot": "workspace:*",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
