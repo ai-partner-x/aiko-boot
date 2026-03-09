@@ -42,10 +42,9 @@ jobs:
         if: steps.check.outputs.result == 'true' || github.event_name == 'workflow_dispatch'
         uses: anomalyco/opencode/github@latest
         env:
-          OPENAI_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
-          OPENAI_BASE_URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+          BAILIAN_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
         with:
-          model: openai/qwen3.5-plus
+          model: bailian/qwen3.5-plus
           prompt: |
             请分析这个 Issue 并进行分类：
             - 判断 Issue 类型（bug/feature/question/documentation）

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "bailian": {
+      "options": {
+        "baseURL": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      },
+      "models": {
+        "qwen3.5-plus": {
+          "name": "Qwen 3.5 Plus",
+          "context": 131072,
+          "max_output": 8192
+        }
+      }
+    }
+  }
+}
