@@ -5,8 +5,8 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn, Select, Input, Label } from '@aff/admin-component';
-import type { DataTableColumn } from '@aff/admin-component';
+import { cn, Select, Input, Label } from '@aiko-boot/admin-component';
+import type { DataTableColumn } from '@aiko-boot/admin-component';
 import { ListReport } from '../../components/ListReport';
 
 // 购物车图标

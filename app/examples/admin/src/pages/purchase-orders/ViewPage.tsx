@@ -4,7 +4,7 @@
  */
 
 import { useNavigate, useParams } from 'react-router-dom';
-import { cn } from '@aff/admin-component';
+import { cn } from '@aiko-boot/admin-component';
 import { EditableTable, TableText, type EditableTableColumn } from '../../components/EditableTable';
 
 // 图标

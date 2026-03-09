@@ -1,5 +1,5 @@
 /**
- * @aff/mall-component
+ * @aiko-boot/mall-component
  * 移动端共享组件库
  */
 

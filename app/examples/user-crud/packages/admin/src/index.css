@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@source "../../admin-component/src";
+@source "../../../../../framework/admin-component/src";
 
 :root {
   --background: oklch(1 0 0);

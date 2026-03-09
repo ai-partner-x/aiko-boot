@@ -1,5 +1,5 @@
 /**
- * AI-First Framework 搜索筛选栏组件
+ * Aiko Boot 搜索筛选栏组件
  */
 
 import * as React from 'react';

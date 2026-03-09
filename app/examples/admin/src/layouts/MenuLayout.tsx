@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { cn } from '@aff/admin-component';
+import { cn } from '@aiko-boot/admin-component';
 import ShellBar from '../components/ShellBar';
 
 // 页面骨架屏组件

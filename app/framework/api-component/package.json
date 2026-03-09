@@ -1,5 +1,5 @@
 {
-  "name": "@aff/api-component",
+  "name": "@aiko-boot/api-component",
   "version": "0.1.0",
   "private": true,
   "type": "module",

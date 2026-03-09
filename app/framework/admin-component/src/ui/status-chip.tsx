@@ -1,5 +1,5 @@
 /**
- * AI-First Framework 状态标签组件
+ * Aiko Boot 状态标签组件
  */
 
 import * as React from 'react';
