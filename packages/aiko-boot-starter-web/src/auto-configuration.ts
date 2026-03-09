@@ -167,7 +167,6 @@ export class WebAutoConfiguration {
 
     // Spring Boot 风格配置读取
     const contextPath = ConfigLoader.get<string>('server.servlet.contextPath', '/api');
-    const maxHttpPostSize = ConfigLoader.get<string>('server.maxHttpPostSize', '10mb');
     const verbose = context.verbose;
 
     // 读取 multipart 文件上传配置 (spring.servlet.multipart.*)
