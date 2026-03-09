@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import {
   RestController, GetMapping, PostMapping, PutMapping, DeleteMapping,
   PathVariable, RequestBody, RequestParam,
-} from '@ai-first/nextjs';
-import { Autowired } from '@ai-first/di/server';
+} from '@ai-partner-x/aiko-boot-starter-web';
+import { Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { UserService } from '../service/user.service.js';
 import type { CreateUserDto, UpdateUserDto, UserPageDto } from '../dto/user.dto.js';
 

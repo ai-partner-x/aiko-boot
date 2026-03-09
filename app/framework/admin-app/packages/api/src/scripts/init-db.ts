@@ -5,7 +5,7 @@
 import 'reflect-metadata';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { createKyselyDatabase, getKyselyDatabase } from '@ai-first/orm';
+import { createKyselyDatabase, getKyselyDatabase } from '@ai-partner-x/aiko-boot-starter-orm';
 import bcrypt from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

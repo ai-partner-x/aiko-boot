@@ -1,13 +1,12 @@
 import 'reflect-metadata';
-import { Service, Transactional } from '@ai-first/core';
-import { Autowired } from '@ai-first/di/server';
+import { Injectable, Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import bcrypt from 'bcryptjs';
 import { SysUserMapper } from '../mapper/sys-user.mapper.js';
 import { SysUserRoleMapper } from '../mapper/sys-user-role.mapper.js';
 import { SysRoleMapper } from '../mapper/sys-role.mapper.js';
 import type { CreateUserDto, UpdateUserDto, UserPageDto, UserVo } from '../dto/user.dto.js';
 
-@Service()
+@Injectable()
 export class UserService {
   @Autowired()
   private userMapper!: SysUserMapper;
@@ -41,7 +40,8 @@ export class UserService {
     return this.toVo(user);
   }
 
-  @Transactional()
+
+
   async createUser(dto: CreateUserDto): Promise<UserVo> {
     const exists = await this.userMapper.selectByUsername(dto.username);
     if (exists) throw new Error('用户名已存在');
@@ -60,7 +60,8 @@ export class UserService {
     return this.toVo(user);
   }
 
-  @Transactional()
+
+
   async updateUser(id: number, dto: UpdateUserDto): Promise<UserVo> {
     const user = await this.userMapper.selectById(id);
     if (!user) throw new Error('用户不存在');
@@ -74,12 +75,14 @@ export class UserService {
     return this.toVo(user);
   }
 
+
   async deleteUser(id: number): Promise<boolean> {
     const user = await this.userMapper.selectById(id);
     if (!user) throw new Error('用户不存在');
     await this.userRoleMapper.delete({ userId: id });
     return this.userMapper.deleteById(id);
   }
+
 
   async resetPassword(id: number, newPassword: string): Promise<void> {
     const user = await this.userMapper.selectById(id);
@@ -88,6 +91,7 @@ export class UserService {
     user.updatedAt = new Date();
     await this.userMapper.updateById(user);
   }
+
 
   private async assignRoles(userId: number, roleIds: number[]) {
     await this.userRoleMapper.delete({ userId });

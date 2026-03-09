@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import {
   RestController, GetMapping, PostMapping, PutMapping, DeleteMapping,
   PathVariable, RequestBody, RequestParam,
-} from '@ai-first/nextjs';
-import { Autowired } from '@ai-first/di/server';
+} from '@ai-partner-x/aiko-boot-starter-web';
+import { Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { MenuService } from '../service/menu.service.js';
 import type { CreateMenuDto, UpdateMenuDto } from '../dto/menu.dto.js';
 

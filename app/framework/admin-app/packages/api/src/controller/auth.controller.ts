@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { RestController, PostMapping, GetMapping, RequestBody, RequestParam } from '@ai-first/nextjs';
-import { Autowired } from '@ai-first/di/server';
+import { RestController, PostMapping, GetMapping, RequestBody, RequestParam } from '@ai-partner-x/aiko-boot-starter-web';
+import { Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { AuthService } from '../service/auth.service.js';
 import type { LoginDto, RefreshTokenDto } from '../dto/auth.dto.js';
 

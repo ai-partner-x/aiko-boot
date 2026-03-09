@@ -1,11 +1,10 @@
 import 'reflect-metadata';
-import { Service, Transactional } from '@ai-first/core';
-import { Autowired } from '@ai-first/di/server';
+import { Injectable, Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { SysRoleMapper } from '../mapper/sys-role.mapper.js';
 import { SysRoleMenuMapper } from '../mapper/sys-role-menu.mapper.js';
 import type { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto.js';
 
-@Service()
+@Injectable()
 export class RoleService {
   @Autowired()
   private roleMapper!: SysRoleMapper;
@@ -24,7 +23,7 @@ export class RoleService {
     return { ...role, menuIds: roleMenus.map((rm: any) => rm.menuId) };
   }
 
-  @Transactional()
+
   async createRole(dto: CreateRoleDto) {
     const exists = await this.roleMapper.selectList({ roleCode: dto.roleCode });
     if (exists.length) throw new Error('角色编码已存在');
@@ -39,7 +38,7 @@ export class RoleService {
     return role;
   }
 
-  @Transactional()
+
   async updateRole(id: number, dto: UpdateRoleDto) {
     const role = await this.roleMapper.selectById(id);
     if (!role) throw new Error('角色不存在');

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Mapper, BaseMapper } from '@ai-first/orm';
+import { Mapper, BaseMapper } from '@ai-partner-x/aiko-boot-starter-orm';
 import { SysUser } from '../entity/sys-user.entity.js';
 
 @Mapper(SysUser)

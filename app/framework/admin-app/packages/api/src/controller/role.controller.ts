@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import {
   RestController, GetMapping, PostMapping, PutMapping, DeleteMapping,
   PathVariable, RequestBody,
-} from '@ai-first/nextjs';
-import { Autowired } from '@ai-first/di/server';
+} from '@ai-partner-x/aiko-boot-starter-web';
+import { Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { RoleService } from '../service/role.service.js';
 import type { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto.js';
 

@@ -7,8 +7,8 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { createExpressRouter } from '@ai-first/nextjs';
-import { createKyselyDatabase } from '@ai-first/orm';
+import { createExpressRouter } from '@ai-partner-x/aiko-boot-starter-web';
+import { createKyselyDatabase } from '@ai-partner-x/aiko-boot-starter-orm';
 import { verifyAccessToken } from './utils/jwt.util.js';
 
 // 注册 mapper（触发 @Mapper 装饰器，加入 DI 容器）

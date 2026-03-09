@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { menuApi } from '../api';
 
@@ -55,7 +55,7 @@ export default function MenuPage() {
     try { await menuApi.delete(id); loadTree(); } catch (err: any) { alert(err.message); }
   };
 
-  function renderRows(nodes: MenuNode[], depth = 0): JSX.Element[] {
+  function renderRows(nodes: MenuNode[], depth = 0): React.ReactNode[] {
     return nodes.flatMap(node => [
       <tr key={node.id} className="hover:bg-gray-50">
         <td className="px-4 py-3 text-gray-800">

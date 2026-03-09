@@ -1,10 +1,9 @@
 import 'reflect-metadata';
-import { Service, Transactional } from '@ai-first/core';
-import { Autowired } from '@ai-first/di/server';
+import { Injectable, Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { SysMenuMapper } from '../mapper/sys-menu.mapper.js';
 import type { CreateMenuDto, UpdateMenuDto, MenuTreeVo } from '../dto/menu.dto.js';
 
-@Service()
+@Injectable()
 export class MenuService {
   @Autowired()
   private menuMapper!: SysMenuMapper;
@@ -30,7 +29,6 @@ export class MenuService {
     return menu;
   }
 
-  @Transactional()
   async createMenu(dto: CreateMenuDto) {
     return this.menuMapper.insert({
       parentId: dto.parentId ?? 0,
@@ -45,7 +43,6 @@ export class MenuService {
     });
   }
 
-  @Transactional()
   async updateMenu(id: number, dto: UpdateMenuDto) {
     const menu = await this.menuMapper.selectById(id);
     if (!menu) throw new Error('菜单不存在');

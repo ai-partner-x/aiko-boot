@@ -1,6 +1,5 @@
 import 'reflect-metadata';
-import { Service } from '@ai-first/core';
-import { Autowired } from '@ai-first/di/server';
+import { Injectable, Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import bcrypt from 'bcryptjs';
 import { SysUserMapper } from '../mapper/sys-user.mapper.js';
 import { SysUserRoleMapper } from '../mapper/sys-user-role.mapper.js';
@@ -10,7 +9,7 @@ import { SysMenuMapper } from '../mapper/sys-menu.mapper.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.util.js';
 import type { TokenVo } from '../dto/auth.dto.js';
 
-@Service()
+@Injectable()
 export class AuthService {
   @Autowired()
   private userMapper!: SysUserMapper;
