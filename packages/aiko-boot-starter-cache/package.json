@@ -25,7 +25,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ai-partner-x/aiko-boot": "file:../aiko-boot",
+    "@ai-partner-x/aiko-boot": "workspace:*",
     "ioredis": "^5.4.2",
     "reflect-metadata": "^0.2.1",
     "tslib": "^2.8.1"
