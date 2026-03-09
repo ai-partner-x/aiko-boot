@@ -1,11 +1,11 @@
-# @ai-first/mq
+# @ai-partner-x/aiko-boot-starter-mq
 
 MQ 模块，Spring Boot 风格的消息队列。支持 RabbitMQ，可扩展 Kafka / Redis。
 
 ## 安装
 
 ```bash
-pnpm add @ai-first/mq
+pnpm add @ai-partner-x/aiko-boot-starter-mq
 ```
 
 ## 配置
@@ -23,7 +23,7 @@ pnpm add @ai-first/mq
 ### 1. 定义消费者
 
 ```ts
-import { MqListener, MqHandler, Payload, ConsumerContainer } from '@ai-first/mq';
+import { MqListener, MqHandler, Payload, ConsumerContainer } from '@ai-partner-x/aiko-boot-starter-mq';
 
 export interface UserCreatedEvent {
   userId: string;
@@ -49,7 +49,7 @@ ConsumerContainer.registerListener(UserCreatedListener);
 ### 2. 发送消息
 
 ```ts
-import { MqTemplate } from '@ai-first/mq';
+import { MqTemplate } from '@ai-partner-x/aiko-boot-starter-mq';
 
 const mqTemplate = new MqTemplate();
 await mqTemplate.send('user.created', {
@@ -59,10 +59,27 @@ await mqTemplate.send('user.created', {
 });
 ```
 
-### 3. 启动时初始化（如 Next.js）
+### 3. 启动方式
+
+**方式 A：使用 createApp（推荐）**
+
+当项目使用 `createApp()` 时，MqAutoConfiguration 会自动发现并加载，无需手动初始化。
 
 ```ts
-import { MqAutoConfiguration } from '@ai-first/mq';
+import { createApp } from '@ai-partner-x/aiko-boot/boot';
+import { ConsumerContainer, MqTemplate } from '@ai-partner-x/aiko-boot-starter-mq';
+import './listeners/UserCreatedListener'; // 注册消费者
+
+const context = await createApp({ srcDir: __dirname });
+// MQ 已在 ApplicationReady 时自动初始化
+const template = new MqTemplate();
+await template.send('user.created', payload);
+```
+
+**方式 B：手动初始化（如 Next.js、独立脚本）**
+
+```ts
+import { MqAutoConfiguration } from '@ai-partner-x/aiko-boot-starter-mq';
 import './listeners/UserCreatedListener'; // 注册消费者
 
 let initialized = false;

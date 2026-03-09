@@ -1,9 +1,9 @@
 /**
- * @ai-first/mq 简单日志
+ * @ai-partner-x/aiko-boot-starter-mq 简单日志
  * 与项目其他包风格一致，使用 console + 前缀
  */
 
-const PREFIX = '[@ai-first/mq]';
+const PREFIX = '[@ai-partner-x/aiko-boot-starter-mq]';
 
 export const logger = {
   info(message: string, ...args: unknown[]): void {

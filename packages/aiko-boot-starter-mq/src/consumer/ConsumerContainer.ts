@@ -23,6 +23,11 @@ export class ConsumerContainer {
     this.listeners.push(listener);
   }
 
+  /** 清空已注册的监听器（仅用于测试） */
+  static clearListenersForTesting(): void {
+    this.listeners = [];
+  }
+
   static async registerAll(adapter: MqConsumeAdapter): Promise<void> {
     for (const ListenerClass of this.listeners) {
       const options = getMqListenerMetadata(ListenerClass);

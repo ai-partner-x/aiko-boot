@@ -1,5 +1,5 @@
 /**
- * @ai-first/mq
+ * @ai-partner-x/aiko-boot-starter-mq
  *
  * MQ 模块，Spring Boot 风格的消息队列
  * 支持 RabbitMQ，可扩展 Kafka / Redis
@@ -27,6 +27,7 @@ export { ConsumerContainer } from './consumer/ConsumerContainer.js';
 
 // Adapters
 export { RabbitMqAdapter } from './adapters/RabbitMqAdapter.js';
+export { InMemoryMqAdapter } from './adapters/InMemoryMqAdapter.js';
 export type { MqMessage, MqConsumeOptions } from './adapters/RabbitMqAdapter.js';
 
 // Logger

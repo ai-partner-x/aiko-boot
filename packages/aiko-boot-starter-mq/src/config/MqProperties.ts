@@ -4,7 +4,7 @@
  */
 
 export interface MqProperties {
-  type: 'rabbitmq' | 'kafka' | 'redis';
+  type: 'rabbitmq' | 'kafka' | 'redis' | 'memory';
   host: string;
   port?: number;
   username: string;
