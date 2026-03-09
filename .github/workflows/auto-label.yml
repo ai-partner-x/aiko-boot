@@ -1,0 +1,69 @@
+name: Auto Label Issue
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Auto label based on OpenCode analysis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = issue.body?.toLowerCase() || '';
+            const labels = [];
+
+            // 根据标题和正文内容自动分类
+            if (title.includes('bug') || title.includes('错误') || title.includes('失败') || title.includes('crash')) {
+              labels.push('bug');
+            } else if (title.includes('feature') || title.includes('功能') || title.includes('添加') || title.includes('支持')) {
+              labels.push('feature');
+            } else if (title.includes('question') || title.includes('问题') || title.includes('询问') || title.includes('怎么')) {
+              labels.push('question');
+            } else if (title.includes('doc') || title.includes('文档') || title.includes('说明')) {
+              labels.push('documentation');
+            }
+
+            // 根据模块分类
+            if (title.includes('web') || body.includes('aiko-boot-starter-web')) {
+              labels.push('module: web');
+            } else if (title.includes('orm') || body.includes('aiko-boot-starter-orm')) {
+              labels.push('module: orm');
+            } else if (title.includes('core') || body.includes('aiko-boot')) {
+              labels.push('module: core');
+            }
+
+            // 根据关键词分类
+            if (body.includes('数据库') || body.includes('mysql') || body.includes('postgresql')) {
+              labels.push('database');
+            }
+            if (body.includes('日志') || body.includes('log')) {
+              labels.push('logging');
+            }
+            if (body.includes('配置') || body.includes('config')) {
+              labels.push('configuration');
+            }
+
+            // 如果没有匹配到任何标签，添加 needs-review
+            if (labels.length === 0) {
+              labels.push('needs-review');
+            }
+
+            // 添加标签
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+              console.log(`Added labels: ${labels.join(', ')}`);
+            }
