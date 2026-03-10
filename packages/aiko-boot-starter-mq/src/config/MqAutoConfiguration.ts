@@ -91,9 +91,11 @@ export class MqAutoConfiguration {
       for (const classes of ctx.components.values()) {
         for (const Klass of classes) {
           const metas = getListeners(Klass as new (...args: unknown[]) => unknown);
-          if (metas.length > 0) {
+          const explicitMetas = (Klass as any).MQ_LISTENERS as Array<{ topic: string }> | undefined;
+          const hasListeners = metas.length > 0 || (explicitMetas && explicitMetas.length > 0);
+          if (hasListeners) {
             ConsumerContainer.registerListener(Klass as new (...args: unknown[]) => unknown);
-            logger.info(`Auto-discovered MQ listener: ${Klass.name}`);
+            logger.info(`Auto-discovered MQ listener: ${Klass.name} (${metas.length || explicitMetas?.length || 0} handler(s))`);
           }
         }
       }

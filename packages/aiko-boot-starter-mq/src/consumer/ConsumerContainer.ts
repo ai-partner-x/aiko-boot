@@ -3,7 +3,7 @@
  * 文档 六 - 自动注册 @MqListener，使用 getListeners
  */
 
-import { getListeners } from '../decorators/MqListener.js';
+import { getListeners, type MqListenerMeta } from '../decorators/MqListener.js';
 import { MqSerializer } from '../core/MqSerializer.js';
 import { MqErrorHandler } from '../core/MqErrorHandler.js';
 import type { MqAdapter } from '../adapters/interfaces.js';
@@ -23,7 +23,10 @@ export class ConsumerContainer {
 
   static async registerAll(adapter: MqAdapter): Promise<void> {
     for (const ListenerClass of this.listenerClasses) {
-      const metas = getListeners(ListenerClass);
+      let metas = getListeners(ListenerClass);
+      if (metas.length === 0 && (ListenerClass as any).MQ_LISTENERS) {
+        metas = (ListenerClass as any).MQ_LISTENERS as MqListenerMeta[];
+      }
 
       for (const meta of metas) {
         const instance = new (ListenerClass as new () => unknown)() as Record<

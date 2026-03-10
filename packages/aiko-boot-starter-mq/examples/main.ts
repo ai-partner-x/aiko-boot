@@ -1,9 +1,8 @@
 /**
  * MQ 注解驱动示例
  *
- * - createApp + scanDirs 自动发现 @MqListener、@Service
- * - MqTemplate 通过 @Autowired 注入
- * - MqTemplate.send 三种重载
+ * - MqProducer 发送消息
+ * - MqConsumer 订阅消息（@MqListener）
  * - MQ_TYPE=memory 无需 RabbitMQ
  */
 
@@ -14,27 +13,29 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { createApp } from '@ai-partner-x/aiko-boot/boot';
 import { Container } from '@ai-partner-x/aiko-boot/di';
-import { MqTemplate } from '@ai-partner-x/aiko-boot-starter-mq';
-import { MqExampleRunner } from './service/MqExampleRunner.js';
+import { MqTemplate, MqAutoConfiguration } from '@ai-partner-x/aiko-boot-starter-mq';
+import { MqProducer } from './service/MqProducer.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 async function main(): Promise<void> {
-  console.log('=== @aiko-boot-starter-mq 注解驱动示例 ===\n');
+  console.log('=== @aiko-boot-starter-mq 示例 ===\n');
 
   await createApp({
     srcDir: __dirname,
     configPath: join(__dirname, '../../..'),
-    scanDirs: ['listeners', 'service'],
+    scanDirs: ['service'],
     verbose: true,
   });
 
-  const runner = Container.resolve(MqExampleRunner);
-  // tsx 直接运行 examples 时 @Autowired 可能未注入，兜底从容器获取
-  if (!(runner as any).mqTemplate) {
-    (runner as any).mqTemplate = Container.resolve(MqTemplate);
+  const producer = Container.resolve(MqProducer);
+  if (!(producer as any).mqTemplate) {
+    (producer as any).mqTemplate = Container.resolve(MqTemplate);
   }
-  await runner.run();
+  await producer.sendAll();
+
+  await MqAutoConfiguration.getAdapter().close();
+  console.log('\n=== 示例完成（上方有 ✅ 即表示 consume 成功）===');
 }
 
 main().catch((e) => {

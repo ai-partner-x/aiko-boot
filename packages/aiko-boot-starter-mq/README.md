@@ -14,7 +14,7 @@ pnpm add @ai-partner-x/aiko-boot-starter-mq
 
 | 变量 | 说明 | 默认 |
 |-----|------|------|
-| `MQ_TYPE` | `rabbitmq` \| `kafka` \| `rocketmq` \| `memory` \| `redis` | `rabbitmq` |
+| `MQ_TYPE` | `rabbitmq` \| `kafka` \| `rocketmq` \| `memory`| `rabbitmq` |
 | `MQ_HOST` | 主机 | `localhost` |
 | `MQ_PORT` | 端口 | `5672` |
 | `MQ_USERNAME` / `MQ_PASSWORD` | 认证（生产环境必须显式设置，避免使用 guest/guest） | `guest` / `guest` |
