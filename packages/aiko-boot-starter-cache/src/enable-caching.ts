@@ -2,7 +2,7 @@
  * 缓存启动验证 — Spring Boot 风格的缓存后端初始化
  *
  * 提供 initializeCaching(config) 用于在应用启动阶段根据 config.type 选择并初始化
- * 缓存后端，对应 Spring Boot 的 `spring.aiko-boot-starter-cache.type` 自动配置机制。
+ * 缓存后端，对应 Spring Boot 的 `cache.type` 自动配置机制。
  *
  * 目前支持 `type: 'redis'`，后续扩展新后端只需在 switch 中添加 case 分支。
  *
@@ -58,7 +58,7 @@ export class CacheInitializationError extends Error {
  * 初始化并验证缓存后端（**必须**在异步启动阶段调用）
  *
  * 根据 `config.type` 自动选择对应的缓存后端，对应 Spring Boot 的
- * `spring.aiko-boot-starter-cache.type` 自动配置机制：
+ * `cache.type` 自动配置机制：
  *
  * - `'redis'` — 验证 Redis 连接（PING）后创建 RedisCacheManager 并注册
  *
