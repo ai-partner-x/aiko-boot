@@ -9,6 +9,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
+    "create": "node packages/aiko-boot-create/dist/cli.js",
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "test": "pnpm -r test",

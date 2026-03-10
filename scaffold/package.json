@@ -2,6 +2,9 @@
   "name": "scaffold-monorepo",
   "version": "0.1.0",
   "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
+  },
   "scripts": {
     "dev": "pnpm -r --parallel --filter \"@scaffold/*\" dev",
     "dev:api": "pnpm -F @scaffold/api dev",
@@ -13,8 +16,10 @@
     "build:mobile": "pnpm -F @scaffold/mobile build",
     "start:api": "pnpm -F @scaffold/api start",
     "init-db": "pnpm -F @scaffold/api init-db",
+    "rebuild:sqlite": "cd node_modules/.pnpm/better-sqlite3@12.6.2/node_modules/better-sqlite3 && npm run build-release",
     "lint": "pnpm -r --filter \"@scaffold/*\" lint"
   },
+  "postinstall": "pnpm rebuild better-sqlite3",
   "devDependencies": {
     "typescript": "^5.3.0"
   }
