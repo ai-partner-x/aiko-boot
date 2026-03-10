@@ -1,0 +1,124 @@
+name: PR Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript type check
+        id: typecheck
+        continue-on-error: true
+        run: |
+          echo "## TypeScript 类型检查" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          pnpm type-check 2>&1 | tee typecheck-output.txt || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Run ESLint
+        id: lint
+        continue-on-error: true
+        run: |
+          echo "## ESLint 代码检查" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          pnpm lint 2>&1 | tee lint-output.txt || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Run tests
+        id: test
+        continue-on-error: true
+        run: |
+          echo "## 单元测试" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          pnpm test 2>&1 | tee test-output.txt || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Collect check results
+        id: results
+        run: |
+          # 收集所有检查结果
+          {
+            echo "TYPECHECK_RESULT<<EOF"
+            cat typecheck-output.txt 2>/dev/null || echo "No output"
+            echo "EOF"
+            echo "LINT_RESULT<<EOF"
+            cat lint-output.txt 2>/dev/null || echo "No output"
+            echo "EOF"
+            echo "TEST_RESULT<<EOF"
+            cat test-output.txt 2>/dev/null || echo "No output"
+            echo "EOF"
+          } >> $GITHUB_ENV
+          
+          # 读取审查规则文件
+          {
+            echo "REVIEW_RULES<<EOF"
+            cat .github/workflows/pr-review-rules.md 2>/dev/null || echo "Rules file not found"
+            echo "EOF"
+          } >> $GITHUB_ENV
+
+      - name: Run OpenCode Review
+        uses: anomalyco/opencode/github@latest
+        env:
+          BAILIAN_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TYPECHECK_RESULT: ${{ env.TYPECHECK_RESULT }}
+          LINT_RESULT: ${{ env.LINT_RESULT }}
+          TEST_RESULT: ${{ env.TEST_RESULT }}
+          REVIEW_RULES: ${{ env.REVIEW_RULES }}
+        with:
+          model: bailian/qwen3.5-plus
+          use_github_token: true
+          prompt: |
+            请审查这个 Pull Request：
+            
+            ## 自动检查结果
+            
+            ### TypeScript 类型检查
+            ```
+            ${{ env.TYPECHECK_RESULT }}
+            ```
+            
+            ### ESLint 代码检查
+            ```
+            ${{ env.LINT_RESULT }}
+            ```
+            
+            ### 单元测试
+            ```
+            ${{ env.TEST_RESULT }}
+            ```
+            
+            ---
+            
+            ## 审查规则
+            
+            请按照以下规则文件进行审查：
+            
+            ${{ env.REVIEW_RULES }}
+            
+            请用中文回复。
