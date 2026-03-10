@@ -203,7 +203,7 @@ jobs:
           } >> $GITHUB_ENV
 
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github-action@v1
         env:
           BAILIAN_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
