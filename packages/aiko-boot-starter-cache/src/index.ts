@@ -18,10 +18,10 @@
  *
  * 对应 Spring 中:
  * ```
- * import org.springframework.aiko-boot-starter-cache.annotation.Cacheable;
- * import org.springframework.aiko-boot-starter-cache.annotation.CachePut;
- * import org.springframework.aiko-boot-starter-cache.annotation.CacheEvict;
- * import org.springframework.aiko-boot-starter-cache.CacheManager;
+ * import org.springframework.cache.annotation.Cacheable;
+ * import org.springframework.cache.annotation.CachePut;
+ * import org.springframework.cache.annotation.CacheEvict;
+ * import org.springframework.cache.CacheManager;
  * ```
  */
 
