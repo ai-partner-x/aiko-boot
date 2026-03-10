@@ -13,12 +13,13 @@ export class RoleService {
   private roleMenuMapper!: SysRoleMenuMapper;
 
   async listRoles() {
-    return this.roleMapper.selectList();
+    return (await this.roleMapper.selectList()).map(r => this.parseEntityDates(r));
   }
 
   async getById(id: number) {
-    const role = await this.roleMapper.selectById(id);
+    let role = await this.roleMapper.selectById(id);
     if (!role) throw new Error('角色不存在');
+    role = this.parseEntityDates(role);
     const roleMenus = await this.roleMenuMapper.selectList({ roleId: id });
     return { ...role, menuIds: roleMenus.map((rm: any) => rm.menuId) };
   }
@@ -32,22 +33,26 @@ export class RoleService {
       roleName: dto.roleName,
       description: dto.description,
       status: dto.status ?? 1,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     });
-    if (dto.menuIds?.length) await this.assignMenus(role.id, dto.menuIds);
-    return role;
+    if (dto.menuIds?.length) {
+      const roleId = typeof role === 'number' ? role : (role.id || role);
+      await this.assignMenus(roleId, dto.menuIds);
+    }
+    return this.parseEntityDates(role);
   }
 
 
   async updateRole(id: number, dto: UpdateRoleDto) {
-    const role = await this.roleMapper.selectById(id);
+    let role = await this.roleMapper.selectById(id);
     if (!role) throw new Error('角色不存在');
+    role = this.parseEntityDates(role);
     if (dto.roleName !== undefined) role.roleName = dto.roleName;
     if (dto.description !== undefined) role.description = dto.description;
     if (dto.status !== undefined) role.status = dto.status;
-    await this.roleMapper.updateById(role);
+    await this.roleMapper.updateById(this.formatEntityDates(role));
     if (dto.menuIds !== undefined) await this.assignMenus(id, dto.menuIds);
-    return role;
+    return this.parseEntityDates(role);
   }
 
   async deleteRole(id: number): Promise<boolean> {
@@ -67,5 +72,21 @@ export class RoleService {
     for (const menuId of menuIds) {
       await this.roleMenuMapper.insert({ roleId, menuId });
     }
+  }
+
+  private parseEntityDates(entity: any): any {
+    const parsed = { ...entity };
+    if (parsed.createdAt && typeof parsed.createdAt === 'string') {
+      parsed.createdAt = new Date(parsed.createdAt);
+    }
+    return parsed;
+  }
+
+  private formatEntityDates(entity: any): any {
+    const formatted = { ...entity };
+    if (formatted.createdAt && formatted.createdAt instanceof Date) {
+      formatted.createdAt = formatted.createdAt.toISOString();
+    }
+    return formatted;
   }
 }
