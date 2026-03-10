@@ -104,6 +104,7 @@ export async function transpileCommand(source: string, options: TranspileOptions
   const generatedFiles: string[] = [];
   const entities: { tableName: string; fields: { name: string; type: string; column: string }[] }[] = [];
   const allParsedClasses: ParsedClass[] = [];
+  const errors: { file: string; error: string; type: string }[] = [];
   
   // Track which components are used
   let hasRedis = false;
@@ -248,7 +249,10 @@ export async function transpileCommand(source: string, options: TranspileOptions
       }
     } catch (error) {
       errorCount++;
-      console.error(`  ❌ Error processing ${file}:`, error instanceof Error ? error.message : error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorType = error instanceof SyntaxError ? 'parse' : error instanceof TypeError ? 'type' : 'other';
+      errors.push({ file, error: errorMessage, type: errorType });
+      console.error(`  ❌ ${errorType.toUpperCase()} Error processing ${file}:`, errorMessage);
     }
   }
 
@@ -326,6 +330,13 @@ export async function transpileCommand(source: string, options: TranspileOptions
     }
   }
 
+  // Generate error report if there are errors
+  if (errors.length > 0 && !options.dryRun) {
+    const errorReportFile = path.join(outputDir, 'codegen-errors.json');
+    fs.writeFileSync(errorReportFile, JSON.stringify(errors, null, 2));
+    console.log(`  📄 Generated: codegen-errors.json`);
+  }
+
   // Summary
   const duration = Date.now() - startTime;
   console.log('');
@@ -334,6 +345,7 @@ export async function transpileCommand(source: string, options: TranspileOptions
   console.log(`   ✅ Success: ${successCount} class(es)`);
   if (errorCount > 0) {
     console.log(`   ❌ Errors: ${errorCount}`);
+    console.log(`   📄 Error details: codegen-errors.json`);
   }
   if (!options.dryRun && generatedFiles.length > 0) {
     console.log(`   📁 Output: ${outputDir}`);

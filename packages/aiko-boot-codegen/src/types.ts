@@ -17,6 +17,15 @@ export const TYPE_MAPPING: Record<string, string> = {
 };
 
 /**
+ * ID type mapping based on component type
+ */
+export const ID_TYPE_MAPPING: Record<string, string> = {
+  default: 'Long',
+  redis: 'String',
+  age: 'Integer',
+};
+
+/**
  * Decorator mapping from TypeScript to Java
  */
 export const DECORATOR_MAPPING: Record<string, string> = {

@@ -2,7 +2,7 @@
  * Java Code Generator - MyBatis-Plus Version
  * Generates Java source code from parsed TypeScript classes
  */
-import { TYPE_MAPPING, IMPORT_MAPPING } from './types.js';
+import { TYPE_MAPPING, IMPORT_MAPPING, ID_TYPE_MAPPING } from './types.js';
 import type { ParsedClass, ParsedMethod, TranspilerOptions, UtilityTypeUsage, ParsedComment, ParsedImport, ParsedInterface } from './types.js';
 import { PluginRegistry, type TransformContext } from './plugins.js';
 import { getBuiltinPlugins } from './builtin-plugins.js';
@@ -672,17 +672,14 @@ function mapFieldType(field: { name: string; type: string; decorators: any[] }):
   // Check if it's a primary key (id)
   const isId = field.name === 'id' || field.decorators.some(d => d.name === 'TableId');
   
-  // For Redis, id should be String, not Long
-  if (isRedis && isId) {
-    return 'String';
-  }
-  
   // Smart number mapping
   if (tsType === 'number') {
-    if (isId) return 'Long';
+    if (isId) {
+      return isRedis ? ID_TYPE_MAPPING.redis : ID_TYPE_MAPPING.default;
+    }
     // Age, count, etc. should be Integer
     if (['age', 'count', 'size', 'index', 'position'].some(n => field.name.toLowerCase().includes(n))) {
-      return 'Integer';
+      return ID_TYPE_MAPPING.age;
     }
     return 'Integer'; // Default to Integer for most number fields
   }

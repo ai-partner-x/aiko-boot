@@ -13,7 +13,7 @@ import type { ParsedDecorator, ParsedMethod, ParsedClass } from './types.js';
  */
 export const redisPlugin: TranspilePlugin = {
   name: 'redis',
-  transformDecorator: (decorator: ParsedDecorator, context: TransformContext) => {
+  transformDecorator: (decorator: ParsedDecorator, _context: TransformContext) => {
     switch (decorator.name) {
       case 'RedisHash':
         return {
@@ -42,7 +42,7 @@ export const redisPlugin: TranspilePlugin = {
         return decorator;
     }
   },
-  transformClass: (cls: ParsedClass, context: TransformContext) => {
+  transformClass: (cls: ParsedClass, _context: TransformContext) => {
     // Add Redis-specific logic if needed
     return cls;
   }
@@ -55,7 +55,7 @@ export const redisPlugin: TranspilePlugin = {
  */
 export const mqPlugin: TranspilePlugin = {
   name: 'mq',
-  transformDecorator: (decorator: ParsedDecorator, context: TransformContext) => {
+  transformDecorator: (decorator: ParsedDecorator, _context: TransformContext) => {
     switch (decorator.name) {
       case 'MqListener':
       case 'StreamListener':
@@ -79,7 +79,7 @@ export const mqPlugin: TranspilePlugin = {
         return decorator;
     }
   },
-  transformMethod: (method: ParsedMethod, context: TransformContext) => {
+  transformMethod: (method: ParsedMethod, _context: TransformContext) => {
     // Add MQ-specific logic if needed
     return method;
   }
@@ -92,7 +92,7 @@ export const mqPlugin: TranspilePlugin = {
  */
 export const securityPlugin: TranspilePlugin = {
   name: 'security',
-  transformDecorator: (decorator: ParsedDecorator, context: TransformContext) => {
+  transformDecorator: (decorator: ParsedDecorator, _context: TransformContext) => {
     switch (decorator.name) {
       case 'PreAuthorize':
       case 'PostAuthorize':
@@ -105,7 +105,7 @@ export const securityPlugin: TranspilePlugin = {
         return decorator;
     }
   },
-  transformMethod: (method: ParsedMethod, context: TransformContext) => {
+  transformMethod: (method: ParsedMethod, _context: TransformContext) => {
     // Add security-specific logic if needed
     return method;
   }
@@ -118,7 +118,7 @@ export const securityPlugin: TranspilePlugin = {
  */
 export const adminPlugin: TranspilePlugin = {
   name: 'admin',
-  transformDecorator: (decorator: ParsedDecorator, context: TransformContext) => {
+  transformDecorator: (decorator: ParsedDecorator, _context: TransformContext) => {
     switch (decorator.name) {
       case 'AdminMenu':
       case 'AdminRoute':
@@ -129,7 +129,7 @@ export const adminPlugin: TranspilePlugin = {
         return decorator;
     }
   },
-  transformClass: (cls: ParsedClass, context: TransformContext) => {
+  transformClass: (cls: ParsedClass, _context: TransformContext) => {
     // Add admin-specific logic if needed
     return cls;
   }
