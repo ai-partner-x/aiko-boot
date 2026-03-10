@@ -35,14 +35,7 @@ export function SecurityProvider(props: SecurityProviderProps): React.ReactEleme
 
   const [user, setUser] = React.useState<User | null>(null);
 
-  React.useEffect(function () {
-    const token = localStorage.getItem(finalTokenKey);
-    if (token) {
-      fetchUserInfo(token);
-    }
-  }, []);
-
-  async function fetchUserInfo(token: string): Promise<void> {
+  const fetchUserInfo = React.useCallback(async function (token: string): Promise<void> {
     try {
       const response = await fetch(finalApiUrl + '/me', {
         headers: {
@@ -58,9 +51,16 @@ export function SecurityProvider(props: SecurityProviderProps): React.ReactEleme
     } catch {
       localStorage.removeItem(finalTokenKey);
     }
-  }
+  }, [finalApiUrl, finalTokenKey]);
 
-  async function login(username: string, password: string): Promise<void> {
+  React.useEffect(function () {
+    const token = localStorage.getItem(finalTokenKey);
+    if (token) {
+      fetchUserInfo(token);
+    }
+  }, [finalTokenKey, fetchUserInfo]);
+
+  const login = React.useCallback(async function (username: string, password: string): Promise<void> {
     const response = await fetch(finalApiUrl + '/login', {
       method: 'POST',
       headers: {
@@ -76,30 +76,30 @@ export function SecurityProvider(props: SecurityProviderProps): React.ReactEleme
     const data = await response.json();
     localStorage.setItem(finalTokenKey, data.token);
     setUser(data.user);
-  }
+  }, [finalApiUrl, finalTokenKey]);
 
-  async function logout(): Promise<void> {
+  const logout = React.useCallback(async function (): Promise<void> {
     localStorage.removeItem(finalTokenKey);
     setUser(null);
-  }
+  }, [finalTokenKey]);
 
-  function hasRole(role: string): boolean {
+  const hasRole = React.useCallback(function (role: string): boolean {
     const userWithRoles = user as UserWithRoles | null;
     if (!userWithRoles || !userWithRoles.roles) return false;
     return userWithRoles.roles.some(function (r: UserRole) {
       return r.name === role;
     });
-  }
+  }, [user]);
 
-  function hasAnyRole(roles: string[]): boolean {
+  const hasAnyRole = React.useCallback(function (roles: string[]): boolean {
     const userWithRoles = user as UserWithRoles | null;
     if (!userWithRoles || !userWithRoles.roles) return false;
     return userWithRoles.roles.some(function (r: UserRole) {
       return roles.indexOf(r.name) !== -1;
     });
-  }
+  }, [user]);
 
-  function hasPermission(permission: string): boolean {
+  const hasPermission = React.useCallback(function (permission: string): boolean {
     const userWithRoles = user as UserWithRoles | null;
     if (!userWithRoles || !userWithRoles.roles) return false;
     return userWithRoles.roles.some(function (r: UserRole) {
@@ -108,25 +108,27 @@ export function SecurityProvider(props: SecurityProviderProps): React.ReactEleme
         return p.name === permission;
       });
     });
-  }
+  }, [user]);
 
-  function hasAnyPermission(permissions: string[]): boolean {
+  const hasAnyPermission = React.useCallback(function (permissions: string[]): boolean {
     if (!user) return false;
     return permissions.some(function (p: string) {
       return hasPermission(p);
     });
-  }
+  }, [user, hasPermission]);
 
-  const value: SecurityContextValue = {
-    user: user,
-    isAuthenticated: user !== null,
-    hasRole: hasRole,
-    hasAnyRole: hasAnyRole,
-    hasPermission: hasPermission,
-    hasAnyPermission: hasAnyPermission,
-    login: login,
-    logout: logout,
-  };
+  const value: SecurityContextValue = React.useMemo(function () {
+    return {
+      user: user,
+      isAuthenticated: user !== null,
+      hasRole: hasRole,
+      hasAnyRole: hasAnyRole,
+      hasPermission: hasPermission,
+      hasAnyPermission: hasAnyPermission,
+      login: login,
+      logout: logout,
+    };
+  }, [user, hasRole, hasAnyRole, hasPermission, hasAnyPermission, login, logout]);
 
   return React.createElement(
     SecurityContext.Provider,

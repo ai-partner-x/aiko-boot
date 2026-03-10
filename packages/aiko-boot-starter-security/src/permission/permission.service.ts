@@ -1,5 +1,14 @@
 import { Service, Autowired } from '@ai-partner-x/aiko-boot';
-import type { User } from '../entities/index.js';
+import type { User, Role, Permission } from '../entities/index.js';
+
+interface UserWithRoles {
+  id: number;
+  roles: Role[];
+}
+
+interface RoleWithPermissions extends Role {
+  permissions: Permission[];
+}
 
 @Service()
 export class PermissionService {
@@ -19,29 +28,21 @@ export class PermissionService {
     const userWithRoles = await this.userMapper.selectById(user.id);
     if (!userWithRoles || !userWithRoles.roles) return false;
 
-    const roles = userWithRoles.roles;
-    for (let i = 0; i < roles.length; i++) {
-      const role = roles[i];
-      if (role.permissions) {
-        for (let j = 0; j < role.permissions.length; j++) {
-          if (role.permissions[j].name === permission) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
+    return userWithRoles.roles.some(function (role: Role) {
+      return role.permissions && role.permissions.some(function (perm: Permission) {
+        return perm.name === permission;
+      });
+    });
   }
 
   async hasPermissions(user: User, permissions: string[]): Promise<boolean> {
     const self = this;
     const results = await Promise.all(
-      permissions.map(function(p) {
+      permissions.map(function (p) {
         return self.hasPermission(user, p);
       })
     );
-    return results.every(function(r) {
+    return results.every(function (r) {
       return r;
     });
   }
@@ -49,35 +50,35 @@ export class PermissionService {
   async hasAnyPermission(user: User, permissions: string[]): Promise<boolean> {
     const self = this;
     const results = await Promise.all(
-      permissions.map(function(p) {
+      permissions.map(function (p) {
         return self.hasPermission(user, p);
       })
     );
-    return results.some(function(r) {
+    return results.some(function (r) {
       return r;
     });
   }
 
   hasRole(user: User, role: string): boolean {
     if (!user.roles) return false;
-    return user.roles.some(function(r) {
+    return user.roles.some(function (r) {
       return r.name === role;
     });
   }
 
   hasAllRoles(user: User, roles: string[]): boolean {
     if (!user.roles) return false;
-    const userRoles = user.roles.map(function(r) {
+    const userRoles = user.roles.map(function (r) {
       return r.name;
     });
-    return roles.every(function(role) {
+    return roles.every(function (role) {
       return userRoles.indexOf(role) !== -1;
     });
   }
 
   hasAnyRole(user: User, roles: string[]): boolean {
     if (!user.roles) return false;
-    return user.roles.some(function(r) {
+    return user.roles.some(function (r) {
       return roles.indexOf(r.name) !== -1;
     });
   }
