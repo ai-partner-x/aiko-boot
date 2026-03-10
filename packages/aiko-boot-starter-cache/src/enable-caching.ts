@@ -6,19 +6,19 @@
  *
  * 目前支持 `type: 'redis'`，后续扩展新后端只需在 switch 中添加 case 分支。
  *
- * @example Redis 后端
+ * @example Redis 后端（编程式）
  * ```typescript
- * import { createApp } from '@ai-partner-x/aiko-boot-starter-web';
+ * import { initializeCaching } from '@ai-partner-x/aiko-boot-starter-cache';
  *
- * const app = await createApp({
- *   srcDir: import.meta.dirname,
- *   aiko-boot-starter-cache: {
- *     type: 'redis',
- *     host: process.env.REDIS_HOST ?? '127.0.0.1',
- *     port: Number(process.env.REDIS_PORT ?? 6379),
- *   },
+ * await initializeCaching({
+ *   type: 'redis',
+ *   host: process.env.REDIS_HOST ?? '127.0.0.1',
+ *   port: Number(process.env.REDIS_PORT ?? 6379),
  * });
  * ```
+ *
+ * 推荐通过配置文件启用自动配置（设置 cache.enabled=true + cache.type='redis'），
+ * 由 CacheAutoConfiguration 在应用启动时自动读取 cache.* 配置并调用 initializeCaching。
  */
 
 import Redis from 'ioredis';
@@ -63,7 +63,8 @@ export class CacheInitializationError extends Error {
  * - `'redis'` — 验证 Redis 连接（PING）后创建 RedisCacheManager 并注册
  *
  * 初始化完成后，@Cacheable / @CachePut / @CacheEvict 将自动通过所选后端提供缓存服务。
- * 通常由 createApp({ aiko-boot-starter-cache: config }) 自动调用，无需手动调用。
+ * 通常由 CacheAutoConfiguration 在应用启动时自动调用（需在配置文件中设置 cache.enabled=true），
+ * 也可直接调用以进行编程式初始化。
  *
  * @param config 缓存后端配置（type 字段决定使用哪个后端）
  *
