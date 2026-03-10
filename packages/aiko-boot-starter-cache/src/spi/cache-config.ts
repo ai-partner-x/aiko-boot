@@ -10,9 +10,22 @@
  * 未来可扩展更多后端，只需在 CacheConfig 联合类型中添加新的成员即可，
  * 无需修改 initializeCaching / @Cacheable / @CachePut / @CacheEvict 等现有代码。
  *
- * @example Redis 后端（单机）
+ * @example Redis 后端（单机）— 通过配置文件自动配置（推荐）
+ * ```json
+ * // app.config.json
+ * {
+ *   "cache": {
+ *     "enabled": true,
+ *     "type": "redis",
+ *     "host": "127.0.0.1",
+ *     "port": 6379
+ *   }
+ * }
+ * ```
+ *
+ * @example Redis 后端（单机）— 编程式初始化
  * ```typescript
- * import { createApp } from '@ai-partner-x/aiko-boot-starter-web';
+ * import { initializeCaching } from '@ai-partner-x/aiko-boot-starter-cache';
  *
  * await createApp({
  *   srcDir: import.meta.dirname,
