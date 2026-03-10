@@ -5,8 +5,8 @@
  * 每个缓存命名空间（name）在 Redis 中以 `name::entryKey` 形式存储。
  *
  * 对应 Spring Data Redis 的：
- *   - org.springframework.data.redis.aiko-boot-starter-cache.RedisCacheManager
- *   - org.springframework.data.redis.aiko-boot-starter-cache.RedisCache
+ *   - org.springframework.data.redis.cache.RedisCacheManager
+ *   - org.springframework.data.redis.cache.RedisCache
  *
  * @example
  * ```typescript
