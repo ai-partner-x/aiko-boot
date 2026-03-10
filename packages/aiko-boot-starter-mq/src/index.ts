@@ -27,7 +27,7 @@ export type { MessageListener } from './consumer/MessageListener.js';
 export { ConsumerContainer } from './consumer/ConsumerContainer.js';
 
 // Adapters
-export type { MqAdapter, WireMessage, MqConsumeOptions } from './adapters/interfaces.js';
+export type { MqAdapter, WireMessage, MqConsumeOptions } from './adapters/MqAdapter.js';
 export { RabbitMqAdapter } from './adapters/RabbitMqAdapter.js';
 export { KafkaMqAdapter } from './adapters/KafkaMqAdapter.js';
 export { RocketMqAdapter } from './adapters/RocketMqAdapter.js';

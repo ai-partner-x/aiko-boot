@@ -9,7 +9,7 @@
 import 'reflect-metadata';
 import type { MqProperties } from './MqProperties.js';
 import { loadMqProperties } from './MqProperties.js';
-import type { MqAdapter } from '../adapters/interfaces.js';
+import type { MqAdapter } from '../adapters/MqAdapter.js';
 import { RabbitMqAdapter } from '../adapters/RabbitMqAdapter.js';
 import { InMemoryMqAdapter } from '../adapters/InMemoryMqAdapter.js';
 import { KafkaMqAdapter } from '../adapters/KafkaMqAdapter.js';

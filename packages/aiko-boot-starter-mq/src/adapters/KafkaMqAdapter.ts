@@ -6,7 +6,7 @@
 import { Kafka, type Producer, type Consumer } from 'kafkajs';
 import { v4 as uuidv4 } from 'uuid';
 import type { MqProperties } from '../config/MqProperties.js';
-import type { MqMessage, MqConsumeOptions, WireMessage } from './interfaces.js';
+import type { MqMessage, MqConsumeOptions, WireMessage } from './MqAdapter.js';
 import { MqSerializer } from '../core/MqSerializer.js';
 import { logger } from '../logger.js';
 

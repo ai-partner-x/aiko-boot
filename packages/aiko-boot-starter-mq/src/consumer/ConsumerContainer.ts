@@ -6,7 +6,7 @@
 import { getListeners, type MqListenerMeta } from '../decorators/MqListener.js';
 import { MqSerializer } from '../core/MqSerializer.js';
 import { MqErrorHandler } from '../core/MqErrorHandler.js';
-import type { MqAdapter } from '../adapters/interfaces.js';
+import type { MqAdapter } from '../adapters/MqAdapter.js';
 import { logger } from '../logger.js';
 
 export class ConsumerContainer {
