@@ -69,8 +69,9 @@ class RedisCache implements Cache {
     do {
       const [nextCursor, keys] = await this.client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = nextCursor;
-      if (keys.length > 0) {
-        await this.client.del(...keys);
+      // Batch deletions (≤50 keys per DEL call) to avoid oversized single requests.
+      for (let i = 0; i < keys.length; i += 50) {
+        await this.client.del(...keys.slice(i, i + 50));
       }
     } while (cursor !== '0');
   }
