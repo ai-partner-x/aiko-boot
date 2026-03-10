@@ -27,6 +27,7 @@
  */
 import 'reflect-metadata';
 import { Container } from '../di/server.js';
+import type { AsyncOptions } from '../types.js';
 
 // Metadata keys (使用字符串而非 Symbol，以便跨模块共享)
 const EVENT_LISTENER_METADATA = 'aiko-boot:eventListener';
@@ -196,6 +197,81 @@ export function OnApplicationReady(options: { order?: number } = {}) {
  */
 export function OnApplicationShutdown(options: { order?: number } = {}) {
   return createLifecycleDecorator('ApplicationShutdown', options);
+}
+
+// ==================== Async ====================
+
+/**
+ * Default error handler for @Async — logs the error with the method name.
+ */
+function defaultAsyncErrorHandler(error: unknown, methodName: string): void {
+  console.error(`[Async] Unhandled error in background task "${methodName}":`, error);
+}
+
+/**
+ * @Async - Execute a method as a background task (like Spring Boot @Async)
+ *
+ * The decorated method returns `void` immediately.  The original async logic is
+ * scheduled with `setImmediate` so that it runs after the current event-loop tick,
+ * detached from the caller's execution path.  This mirrors Spring's fire-and-forget
+ * semantics when a `@Async` method returns `void`.
+ *
+ * Error handling:
+ * - By default, any uncaught error is written to `console.error`.
+ * - Pass `onError` in the options object to override this behavior (e.g. send to
+ *   an alerting service or structured logger).
+ *
+ * @param options - Optional configuration
+ *
+ * @example
+ * // Fire-and-forget email notification
+ * @Service()
+ * export class NotificationService {
+ *   @Async()
+ *   async sendWelcomeEmail(userId: number): Promise<void> {
+ *     // runs in background — caller is NOT blocked
+ *     await this.mailer.send(userId);
+ *   }
+ * }
+ *
+ * @example
+ * // Custom error handler
+ * @Async({ onError: (err, method) => logger.error({ method, err }) })
+ * async heavyReport(): Promise<void> { ... }
+ */
+export function Async(options: AsyncOptions = {}) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    Reflect.defineMetadata(ASYNC_METADATA, { ...options }, target, propertyKey);
+
+    const original = descriptor.value;
+    descriptor.value = function (this: any, ...args: any[]) {
+      const ctx = this;
+      setImmediate(async () => {
+        try {
+          await original.apply(ctx, args);
+        } catch (error) {
+          const handler = options.onError ?? defaultAsyncErrorHandler;
+          handler(error, propertyKey);
+        }
+      });
+      // Return void immediately — fire-and-forget
+    };
+    return descriptor;
+  };
+}
+
+/**
+ * Returns true when the given method has been decorated with @Async.
+ */
+export function isAsync(target: any, methodName: string): boolean {
+  return Reflect.hasMetadata(ASYNC_METADATA, target, methodName);
+}
+
+/**
+ * Returns the AsyncOptions recorded by @Async on the given method, or undefined.
+ */
+export function getAsyncOptions(target: any, methodName: string): AsyncOptions | undefined {
+  return Reflect.getMetadata(ASYNC_METADATA, target, methodName);
 }
 
 /**

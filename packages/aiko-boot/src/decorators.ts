@@ -8,13 +8,12 @@
  */
 import 'reflect-metadata';
 import { Injectable, Singleton, inject, injectAutowiredProperties } from './di/server.js';
-import type { ServiceOptions, AsyncOptions } from './types.js';
+import type { ServiceOptions } from './types.js';
 
 // Metadata keys (使用字符串而非 Symbol，以便跨 ESM 模块共享)
 const SERVICE_METADATA = 'aiko-boot:service';
 const COMPONENT_METADATA = 'aiko-boot:component';
 const TRANSACTIONAL_METADATA = 'aiko-boot:transactional';
-const ASYNC_METADATA = 'aiko-boot:async';
 
 // ==================== Component Layer ====================
 
@@ -143,67 +142,6 @@ export function Transactional() {
   };
 }
 
-// ==================== Async ====================
-
-/**
- * Default error handler for @Async — logs the error with the method name.
- */
-function defaultAsyncErrorHandler(error: unknown, methodName: string): void {
-  console.error(`[Async] Unhandled error in background task "${methodName}":`, error);
-}
-
-/**
- * @Async - Execute a method as a background task (like Spring Boot @Async)
- *
- * The decorated method returns `void` immediately.  The original async logic is
- * scheduled with `setImmediate` so that it runs after the current event-loop tick,
- * detached from the caller's execution path.  This mirrors Spring's fire-and-forget
- * semantics when a `@Async` method returns `void`.
- *
- * Error handling:
- * - By default, any uncaught error is written to `console.error`.
- * - Pass `onError` in the options object to override this behavior (e.g. send to
- *   an alerting service or structured logger).
- *
- * @param options - Optional configuration
- *
- * @example
- * // Fire-and-forget email notification
- * @Service()
- * export class NotificationService {
- *   @Async()
- *   async sendWelcomeEmail(userId: number): Promise<void> {
- *     // runs in background — caller is NOT blocked
- *     await this.mailer.send(userId);
- *   }
- * }
- *
- * @example
- * // Custom error handler
- * @Async({ onError: (err, method) => logger.error({ method, err }) })
- * async heavyReport(): Promise<void> { ... }
- */
-export function Async(options: AsyncOptions = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    Reflect.defineMetadata(ASYNC_METADATA, { ...options }, target, propertyKey);
-
-    const original = descriptor.value;
-    descriptor.value = function (this: any, ...args: any[]) {
-      const ctx = this;
-      setImmediate(async () => {
-        try {
-          await original.apply(ctx, args);
-        } catch (error) {
-          const handler = options.onError ?? defaultAsyncErrorHandler;
-          handler(error, propertyKey);
-        }
-      });
-      // Return void immediately — fire-and-forget
-    };
-    return descriptor;
-  };
-}
-
 // ==================== Metadata Getters ====================
 
 export function getComponentMetadata(target: any): { name?: string } | undefined {
@@ -216,12 +154,4 @@ export function getServiceMetadata(target: any): ServiceOptions | undefined {
 
 export function isTransactional(target: any, methodName: string): boolean {
   return Reflect.getMetadata(TRANSACTIONAL_METADATA, target, methodName) || false;
-}
-
-export function isAsync(target: any, methodName: string): boolean {
-  return Reflect.hasMetadata(ASYNC_METADATA, target, methodName);
-}
-
-export function getAsyncOptions(target: any, methodName: string): AsyncOptions | undefined {
-  return Reflect.getMetadata(ASYNC_METADATA, target, methodName);
 }

@@ -31,13 +31,17 @@ export {
   Component,
   Service,
   Transactional,
-  Async,
   getComponentMetadata,
   getServiceMetadata,
   isTransactional,
+} from './decorators.js';
+
+// Export lifecycle decorators (including @Async)
+export {
+  Async,
   isAsync,
   getAsyncOptions,
-} from './decorators.js';
+} from './boot/lifecycle.js';
 
 // Re-export DI (for convenience)
 export {
