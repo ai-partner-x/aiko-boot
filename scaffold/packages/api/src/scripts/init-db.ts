@@ -5,11 +5,17 @@
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
-// @ts-expect-error sql.js has no types
+import { randomBytes, scryptSync } from 'crypto';
 import initSqlJs from 'sql.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, '../../data/app.db');
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString('hex');
+  const hash = scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${hash}`;
+}
 
 console.log('📁 Database path:', dbPath);
 
@@ -30,14 +36,15 @@ db.run(`
 console.log('✅ Created table: sys_user');
 
 const defaultUsers = [
-  { user_name: 'admin', password_hash: 'admin123', email: 'admin@example.com' },
+  { user_name: 'admin', password: 'admin123', email: 'admin@example.com' },
 ];
 
 for (const u of defaultUsers) {
   try {
+    const passwordHash = hashPassword(u.password);
     db.run(
       'INSERT OR IGNORE INTO sys_user (user_name, password_hash, email) VALUES (?, ?, ?)',
-      [u.user_name, u.password_hash, u.email]
+      [u.user_name, passwordHash, u.email]
     );
     console.log(`✅ Inserted user: ${u.user_name}`);
   } catch {

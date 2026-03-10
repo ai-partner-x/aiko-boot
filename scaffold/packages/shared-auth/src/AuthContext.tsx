@@ -74,8 +74,11 @@ function writeStoredAuth(stored: StoredAuth | null): void {
     } else {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
-  } catch {
-    // ignore
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.error('[AuthContext] Failed to write auth to storage', error);
+    }
   }
 }
 

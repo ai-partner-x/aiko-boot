@@ -36,11 +36,42 @@ function promptConfirm(question: string, defaultValue: boolean): Promise<boolean
 
 /** Normalize project name to valid npm scope (lowercase, no spaces). */
 function toScope(name: string): string {
-  return name
+  const normalized = name
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '') || 'my-app';
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return normalized || 'my-app';
+}
+
+const RESERVED_SCOPES = new Set([
+  'node',
+  'npm',
+  'js',
+  'javascript',
+  'typescript',
+  'react',
+  'vue',
+  'angular',
+  'core',
+  'admin',
+  'root',
+  'system',
+]);
+
+function assertValidScope(scope: string): void {
+  if (!scope) {
+    console.error('Invalid scope: empty value. Please provide a non-empty project name.');
+    process.exit(1);
+  }
+
+  if (RESERVED_SCOPES.has(scope)) {
+    console.error(`Invalid scope "${scope}": this name is reserved. Please choose a different project name.`);
+    process.exit(1);
+  }
 }
 
 /** Show destination default as relative path when under cwd (e.g. "./my-app"). */
@@ -104,6 +135,7 @@ export function createCommand(): void {
       }
 
       const scope = toScope(projectName);
+      assertValidScope(scope);
 
       // If target dir exists and is not empty, create project in a subdir named after scope
       if (await fs.pathExists(targetDir)) {
