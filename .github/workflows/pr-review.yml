@@ -77,28 +77,28 @@ jobs:
           # 读取通用审查规则
           {
             echo "COMMON_RULES<<EOF"
-            cat .github/workflows/pr-review-rules-common.md 2>/dev/null || echo "Common rules file not found"
+            cat .github/workflows/rules/pr-review-rules-common.md 2>/dev/null || echo "Common rules file not found"
             echo "EOF"
           } >> $GITHUB_ENV
           
           # 读取服务端组件审查规则
           {
             echo "SERVER_RULES<<EOF"
-            cat .github/workflows/pr-review-rules-server.md 2>/dev/null || echo "Server rules file not found"
+            cat .github/workflows/rules/pr-review-rules-server.md 2>/dev/null || echo "Server rules file not found"
             echo "EOF"
           } >> $GITHUB_ENV
           
           # 读取管理后台审查规则
           {
             echo "ADMIN_RULES<<EOF"
-            cat .github/workflows/pr-review-rules-admin.md 2>/dev/null || echo "Admin rules file not found"
+            cat .github/workflows/rules/pr-review-rules-admin.md 2>/dev/null || echo "Admin rules file not found"
             echo "EOF"
           } >> $GITHUB_ENV
           
           # 读取移动端审查规则
           {
             echo "MOBILE_RULES<<EOF"
-            cat .github/workflows/pr-review-rules-mobile.md 2>/dev/null || echo "Mobile rules file not found"
+            cat .github/workflows/rules/pr-review-rules-mobile.md 2>/dev/null || echo "Mobile rules file not found"
             echo "EOF"
           } >> $GITHUB_ENV
 
