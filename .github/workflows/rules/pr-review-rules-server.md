@@ -1,45 +1,78 @@
-# Server Component PR Review Rules
+# Server Core PR Review Rules
 
-服务端组件 PR 审查规则
+服务端核心框架 PR 审查规则
 
 ## 适用目录
 
 - `packages/aiko-boot/` - 核心框架
-- `packages/aiko-boot-starter-*/` - Starter 插件
 - `packages/aiko-boot-codegen/` - 代码生成器
 
-## 命名规范检查
+## 核心 API 设计检查
 
-- 包名是否符合 `@ai-partner-x/aiko-boot-starter-{功能}` 格式
-- 配置前缀是否简短有意义（如 database, redis, mq）
-- 自动配置类命名是否为 `{Feature}AutoConfiguration`
-- 配置属性类命名是否为 `{Feature}Properties`
+- 公共 API 是否稳定（避免破坏性变更）
+- 命名是否符合框架整体风格
+- 是否向后兼容
+- 是否提供完整的 TypeScript 类型定义
 
-## 条件装配检查
+## 架构设计检查
 
-- 是否使用 `@ConditionalOnProperty` 让用户可控启用/禁用
-- 是否使用 `@ConditionalOnMissingBean` 允许用户覆盖默认实现
-- 条件表达式是否合理
+- 模块划分是否合理
+- 依赖关系是否清晰（避免循环依赖）
+- 是否遵循单一职责原则
+- 扩展点设计是否合理（便于 starter 扩展）
 
-## 生命周期检查
+## 装饰器实现检查
 
-- 初始化是否使用 `@OnApplicationReady`，order 负数优先
-- 清理是否使用 `@OnApplicationShutdown`，order 正数延后
-- 是否正确处理异步操作
+- 装饰器实现是否正确（metadata 存储）
+- 是否支持参数化装饰器
+- 装饰器组合是否正确
+- 是否提供完整的类型定义
 
-## 类型扩展检查
+## 生命周期管理检查
 
-- 是否提供 `config-augment.ts` 扩展 `AppConfig` 接口
-- 类型定义是否完整，让用户的 `app.config.ts` 有智能提示
+- 应用启动流程是否清晰
+- 生命周期钩子是否正确触发
+- 异常处理是否完善
+- 关闭流程是否优雅
 
-## 日志输出检查
+## 依赖注入检查
 
-- 是否使用 emoji 前缀标识模块（如 `🗄️ [aiko-orm]`）
-- 关键操作是否输出日志便于调试
-- 错误日志是否清晰
+- IoC 容器实现是否正确
+- 循环依赖检测
+- 作用域管理（单例/请求/原型）
+- 依赖解析性能
 
-## 导出规范检查
+## 配置系统检查
 
-- `index.ts` 是否正确导出所有公共 API
-- 是否导出 `@AutoConfiguration` 标记的类
-- 是否导出类型扩展
+- 配置加载顺序是否正确
+- 配置覆盖机制是否完善
+- 环境变量支持
+- 配置类型安全
+
+## 日志系统检查
+
+- 日志级别控制
+- 日志格式化
+- 性能影响（异步日志）
+- 上下文信息（traceId）
+
+## 错误处理检查
+
+- 全局异常捕获
+- 错误分类（业务/系统）
+- 错误码规范
+- 堆栈信息保留
+
+## 性能优化检查
+
+- 启动时间优化
+- 内存使用优化
+- 不必要的计算消除
+- 缓存策略
+
+## 测试覆盖检查
+
+- 核心功能单元测试
+- 集成测试
+- 边界情况测试
+- 性能基准测试

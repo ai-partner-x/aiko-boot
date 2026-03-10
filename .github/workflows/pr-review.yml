@@ -81,10 +81,17 @@ jobs:
             echo "EOF"
           } >> $GITHUB_ENV
           
-          # 读取服务端组件审查规则
+          # 读取服务端核心审查规则
           {
-            echo "SERVER_RULES<<EOF"
-            cat .github/workflows/rules/pr-review-rules-server.md 2>/dev/null || echo "Server rules file not found"
+            echo "SERVER_CORE_RULES<<EOF"
+            cat .github/workflows/rules/pr-review-rules-server.md 2>/dev/null || echo "Server core rules file not found"
+            echo "EOF"
+          } >> $GITHUB_ENV
+          
+          # 读取服务端 Starter 审查规则
+          {
+            echo "SERVER_STARTER_RULES<<EOF"
+            cat .github/workflows/rules/pr-review-rules-starter.md 2>/dev/null || echo "Server starter rules file not found"
             echo "EOF"
           } >> $GITHUB_ENV
           
@@ -111,7 +118,8 @@ jobs:
           LINT_RESULT: ${{ env.LINT_RESULT }}
           TEST_RESULT: ${{ env.TEST_RESULT }}
           COMMON_RULES: ${{ env.COMMON_RULES }}
-          SERVER_RULES: ${{ env.SERVER_RULES }}
+          SERVER_CORE_RULES: ${{ env.SERVER_CORE_RULES }}
+          SERVER_STARTER_RULES: ${{ env.SERVER_STARTER_RULES }}
           ADMIN_RULES: ${{ env.ADMIN_RULES }}
           MOBILE_RULES: ${{ env.MOBILE_RULES }}
         with:
@@ -151,9 +159,13 @@ jobs:
             
             根据此 PR 修改的文件路径，选择适用的专项审查规则：
             
-            ### 如果修改了服务端组件代码（packages/aiko-boot/ 或 packages/aiko-boot-starter-*/）
+            ### 如果修改了服务端核心代码（packages/aiko-boot/ 或 packages/aiko-boot-codegen/）
             
-            ${{ env.SERVER_RULES }}
+            ${{ env.SERVER_CORE_RULES }}
+            
+            ### 如果修改了服务端 Starter 代码（packages/aiko-boot-starter-*/）
+            
+            ${{ env.SERVER_STARTER_RULES }}
             
             ### 如果修改了管理后台代码（app/examples/admin/）
             
