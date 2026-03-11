@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { Service, Transactional } from '@ai-first/core';
-import { Autowired } from '@ai-first/di/server';
+import { Service, Transactional } from '@ai-partner-x/aiko-boot';
+import { Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import { MenuMapper } from '../mapper/menu.mapper.js';
 import type { CreateMenuDto, UpdateMenuDto, MenuTreeVo } from '../dto/menu.dto.js';
 

@@ -1,17 +1,17 @@
 import 'reflect-metadata';
-import { Service, Transactional } from '@ai-first/core';
-import { Autowired } from '@ai-first/di/server';
-import { SysRoleMapper } from '../mapper/sys-role.mapper.js';
-import { SysRoleMenuMapper } from '../mapper/sys-role-menu.mapper.js';
+import { Service, Transactional } from '@ai-partner-x/aiko-boot';
+import { Autowired } from '@ai-partner-x/aiko-boot/di/server';
+import { RoleMapper } from '../mapper/role.mapper.js';
+import { RoleMenuMapper } from '../mapper/role-menu.mapper.js';
 import type { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto.js';
 
 @Service()
 export class RoleService {
   @Autowired()
-  private roleMapper!: SysRoleMapper;
+  private roleMapper!: RoleMapper;
 
   @Autowired()
-  private roleMenuMapper!: SysRoleMenuMapper;
+  private roleMenuMapper!: RoleMenuMapper;
 
   async listRoles() {
     return this.roleMapper.selectList();

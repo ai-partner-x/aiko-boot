@@ -1,21 +1,21 @@
 import 'reflect-metadata';
 import { Injectable, Autowired } from '@ai-partner-x/aiko-boot/di/server';
 import bcrypt from 'bcryptjs';
-import { SysUserMapper } from '../mapper/sys-user.mapper.js';
-import { SysUserRoleMapper } from '../mapper/sys-user-role.mapper.js';
-import { SysRoleMapper } from '../mapper/sys-role.mapper.js';
+import { UserMapper } from '../mapper/user.mapper.js';
+import { UserRoleMapper } from '../mapper/user-role.mapper.js';
+import { RoleMapper } from '../mapper/role.mapper.js';
 import type { CreateUserDto, UpdateUserDto, UserPageDto, UserVo } from '../dto/user.dto.js';
 
 @Injectable()
 export class UserService {
   @Autowired()
-  private userMapper!: SysUserMapper;
+  private userMapper!: UserMapper;
 
   @Autowired()
-  private userRoleMapper!: SysUserRoleMapper;
+  private userRoleMapper!: UserRoleMapper;
 
   @Autowired()
-  private roleMapper!: SysRoleMapper;
+  private roleMapper!: RoleMapper;
 
   async pageUsers(params: UserPageDto) {
     const allUsers = await this.userMapper.selectList();
