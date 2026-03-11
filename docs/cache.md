@@ -201,6 +201,7 @@ import type { AppConfig } from '@ai-partner-x/aiko-boot';
 
 export default {
   cache: {
+    enabled: true,
     type: 'redis',
     host: process.env.REDIS_HOST ?? '127.0.0.1',
     port: Number(process.env.REDIS_PORT ?? 6379),
@@ -231,7 +232,7 @@ export default {
 } satisfies AppConfig;
 ```
 
-> **提示**：`cache.*` 属性缺失时，`@ConditionalOnProperty('cache.type')` 会跳过 `CacheAutoConfiguration`，缓存装饰器自动降级，无需 Redis 即可本地开发。
+> **提示**：`cache.enabled` 属性控制是否启用 `CacheAutoConfiguration`：当 `cache.enabled` ≠ `'true'` 时，`@ConditionalOnProperty('cache.enabled', { havingValue: 'true' })` 会跳过 `CacheAutoConfiguration`，缓存装饰器自动降级，无需 Redis 即可本地开发。
 
 ### 方式二：手动初始化
 

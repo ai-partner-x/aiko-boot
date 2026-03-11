@@ -148,6 +148,7 @@ export class UserService {
   }
 
   @Transactional()
+  @CacheEvict({ key: 'users', allEntries: true })
   @CachePut({ key: 'user', ttl: 300, keyGenerator: (id) => String(id) })
   async updateUser(id: number, dto: UpdateUserDto): Promise<User> {
     const user = await this.userMapper.selectById(id);
@@ -166,6 +167,7 @@ export class UserService {
 
   @Transactional()
   @CacheEvict({ key: 'user', keyGenerator: (id) => String(id) })
+  @CacheEvict({ key: 'users', allEntries: true })
   async deleteUser(id: number): Promise<boolean> {
     const user = await this.userMapper.selectById(id);
     if (!user) {
@@ -187,7 +189,7 @@ export class UserService {
   }
 
   @Transactional()
-  @CacheEvict({ key: 'user', keyGenerator: (_, newEmail) => String(newEmail) })
+  @CacheEvict({ key: 'user', keyGenerator: (id) => String(id) })
   async updateEmailById(id: number, newEmail: string): Promise<number> {
     const wrapper = new UpdateWrapper<User>()
       .set('email', newEmail)

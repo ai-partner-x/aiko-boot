@@ -37,7 +37,7 @@ function defaultSerializer<T>(): RedisSerializer<T> {
 
 // ==================== IORedisAdapter ====================
 
-export interface IORedisAdapterOptions<K = string, V extends string | Record<string, unknown> = Record<string, unknown>> {
+export interface IORedisAdapterOptions<K = string, V = unknown> {
   /** ioredis 实例 */
   client: Redis;
   /** key 序列化器，默认使用字符串透传 */
@@ -50,7 +50,7 @@ export interface IORedisAdapterOptions<K = string, V extends string | Record<str
  * IORedisAdapter - 适配器核心，封装 ioredis 命令
  * 提供 Spring Boot RedisTemplate 风格的操作接口
  */
-export class IORedisAdapter<K = string, V extends string | Record<string, unknown> = Record<string, unknown>> {
+export class IORedisAdapter<K = string, V = unknown> {
   protected client: Redis;
   protected keySerializer: RedisSerializer<K>;
   protected valueSerializer: RedisSerializer<V>;
