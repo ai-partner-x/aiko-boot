@@ -243,13 +243,17 @@ function defaultAsyncErrorHandler(error: unknown, methodName: string): void {
  * async heavyReport(): Promise<void> { ... }
  */
 export function Async(options: AsyncOptions = {}) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function <T extends (...args: any[]) => void | Promise<void>>(
+    target: any,
+    propertyKey: string,
+    descriptor: TypedPropertyDescriptor<T>,
+  ): TypedPropertyDescriptor<T> {
     // Store a boolean flag so lifecycle/event readers can treat it as boolean.
     Reflect.defineMetadata(ASYNC_METADATA, true, target, propertyKey);
     // Store the options object under a separate key.
     Reflect.defineMetadata(ASYNC_OPTIONS_METADATA, { ...options }, target, propertyKey);
 
-    const original = descriptor.value;
+    const original = descriptor.value!;
     descriptor.value = function (this: any, ...args: any[]) {
       const ctx = this;
       setImmediate(async () => {
@@ -270,10 +274,13 @@ export function Async(options: AsyncOptions = {}) {
           }
         }
       });
+      // The wrapper always returns Promise<void>; the cast is required because the
+      // wrapper's return type is not directly assignable to T (which may be void or
+      // Promise<void>), even though both satisfy the constraint.
       // Return a resolved Promise so callers can safely call .catch() on the result
       // without triggering a TypeError (fire-and-forget semantics are still preserved).
       return Promise.resolve();
-    };
+    } as unknown as T;
     return descriptor;
   };
 }

@@ -212,8 +212,9 @@ export interface MultipartFile {
  *
  * Used with file uploads. Multer middleware is applied to the route only when multipart uploads
  * are enabled/configured (e.g. via `ExpressRouterOptions.multipart` or framework auto-configuration
- * such as `WebAutoConfiguration` / `spring.servlet.multipart.enabled`). If multipart is not
- * enabled, the `@RequestPart` parameter will not be populated.
+ * such as `WebAutoConfiguration` / `spring.servlet.multipart.enabled`). If multipart support is not
+ * configured/enabled for a route that uses `@RequestPart`, the router will fail fast and throw during
+ * route registration instead of injecting an undefined parameter.
  *
  * @param name - The name of the form field (defaults to 'file')
  *
