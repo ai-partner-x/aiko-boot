@@ -32,67 +32,97 @@ jobs:
             echo "should_merge=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Merge PR
-        if: steps.check_merge.outputs.should_merge == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.issue.number;
-            
-            // 检查 PR 状态
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber
-            });
-            
-            if (pr.merged) {
-              console.log('PR is already merged');
-              return;
-            }
-            
-            if (!pr.mergeable) {
-              console.log('PR has conflicts and cannot be merged');
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: '❌ 无法合并：PR 存在冲突，请先解决冲突。'
-              });
-              return;
-            }
-            
-            // 执行合并
-            try {
-              await github.rest.pulls.merge({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: prNumber,
-                merge_method: 'squash'  // 使用 squash 合并
-              });
-              
-              console.log('PR merged successfully');
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: '✅ PR 已通过 OpenCode 命令合并。'
-              });
-            } catch (error) {
-              console.log('Merge failed:', error.message);
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: `❌ 合并失败：${error.message}`
-              });
-            }
+      - name: Extract user requirements
+        id: user_requirements
+        if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
+        run: |
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          # 提取 /oc review 后面的内容
+          REQUIREMENTS=$(echo "$COMMENT_BODY" | sed -n 's/.*\/oc review\s*//p' | sed -n 's/.*\/opencode review\s*//p')
+          if [ -n "$REQUIREMENTS" ]; then
+            echo "USER_REQUIREMENTS<<EOF" >> $GITHUB_ENV
+            echo "$REQUIREMENTS" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+            echo "User requirements extracted: $REQUIREMENTS"
+          else
+            echo "USER_REQUIREMENTS=" >> $GITHUB_ENV
+            echo "No user requirements found"
+          fi
 
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge PR
+        if: steps.check_merge.outputs.should_merge == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.issue.number;
+            
+            try {
+              // 获取 PR 信息
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              
+              // 检查是否已合并
+              if (pr.merged) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: '⚠️ PR 已经合并过了。'
+                });
+                return;
+              }
+              
+              // 检查是否有冲突
+              if (!pr.mergeable) {
+                const author = pr.user.login;
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: `❌ **无法合并：PR 存在冲突**\n\n@${author} 请在你的功能分支上解决冲突：\n\n\`\`\`bash\ngit fetch origin develop\ngit merge origin/develop\n# 解决冲突后\ngit add .\ngit commit -m "fix: resolve merge conflicts with develop"\ngit push\n\`\`\`\n\n完成后 PR 会自动更新，届时可再次使用 \`/oc merge\` 合并。`
+                });
+                return;
+              }
+              
+              // 执行 squash 合并
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                merge_method: 'squash',
+                commit_title: `Merge PR #${prNumber}: ${pr.title}`,
+                commit_message: `Merged via /oc merge command\n\nOriginal PR: #${prNumber}`
+              });
+              
+              // 成功评论
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `✅ **PR 已成功合并到 \`${pr.base.ref}\` 分支！**\n\n- 合并方式：Squash\n- 合并时间：${new Date().toISOString()}\n- 操作人：github-actions[bot]`
+              });
+              
+            } catch (error) {
+              console.error('Merge error:', error);
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `❌ **合并失败**\n\n错误信息：${error.message}\n\n请检查 PR 状态或手动合并。`
+              });
+              core.setFailed(error.message);
+            }
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -105,7 +135,7 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Run TypeScript type check
         id: typecheck
@@ -186,7 +216,7 @@ jobs:
           } >> $GITHUB_ENV
 
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github-action@v1
         env:
           BAILIAN_API_KEY: ${{ secrets.BAILIAN_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -198,59 +228,123 @@ jobs:
           SERVER_STARTER_RULES: ${{ env.SERVER_STARTER_RULES }}
           ADMIN_RULES: ${{ env.ADMIN_RULES }}
           MOBILE_RULES: ${{ env.MOBILE_RULES }}
+          USER_REQUIREMENTS: ${{ env.USER_REQUIREMENTS }}
         with:
           model: bailian/qwen3.5-plus
           use_github_token: true
           prompt: |
-            请审查这个 Pull Request：
+            # 🔴 重要：你的回复必须包含审查结论
+            
+            你是一个代码审查助手。在审查完成后，你**必须**在回复末尾给出明确的审查结论。
+            这是强制性要求，没有审查结论的回复将被视为无效。
+            
+            ---
+            
+            ## 请审查这个 Pull Request
+            
+            ### 用户的个性化审查要求
+            ${{ env.USER_REQUIREMENTS }}
+            
+            ---
             
             ## 自动检查结果
             
-            ### TypeScript 类型检查
+            **TypeScript 类型检查：**
             ```
             ${{ env.TYPECHECK_RESULT }}
             ```
             
-            ### ESLint 代码检查
+            **ESLint 代码检查：**
             ```
             ${{ env.LINT_RESULT }}
             ```
             
-            ### 单元测试
+            **单元测试：**
             ```
             ${{ env.TEST_RESULT }}
             ```
             
             ---
             
-            ## 通用审查规则
+            ## 审查规则
             
-            所有 PR 都需要遵循以下规则：
+            根据修改的文件路径，应用以下规则：
             
-            ${{ env.COMMON_RULES }}
+            **服务端核心代码（packages/aiko-boot/ 或 packages/aiko-boot-codegen/）：**
+            ${{ env.SERVER_CORE_RULES }}
+            
+            **服务端 Starter（packages/aiko-boot-starter-*/）：**
+            ${{ env.SERVER_STARTER_RULES }}
+            
+            **管理后台（app/examples/admin/）：**
+            ${{ env.ADMIN_RULES }}
+            
+            **移动端（app/examples/mobile/）：**
+            ${{ env.MOBILE_RULES }}
             
             ---
             
-            ## 专项审查规则
+            ## 输出格式（严格遵守）
             
-            根据此 PR 修改的文件路径，选择适用的专项审查规则：
+            你的回复必须包含以下两个部分：
             
-            ### 如果修改了服务端核心代码（packages/aiko-boot/ 或 packages/aiko-boot-codegen/）
+            **第一部分：审查详情**
+            - 🔴 必须修复（类型错误、测试失败、违反规范）
+            - 🟡 建议改进（ESLint 警告、代码风格）
+            - ✅ 优点
+            - 💡 建议
             
-            ${{ env.SERVER_CORE_RULES }}
+            **第二部分：审查结论（必填，与详情分开）**
             
-            ### 如果修改了服务端 Starter 代码（packages/aiko-boot-starter-*/）
+            ---
             
-            ${{ env.SERVER_STARTER_RULES }}
+            ## 🔴🔴🔴 审查结论格式（必须严格按此格式输出）
             
-            ### 如果修改了管理后台代码（app/examples/admin/）
+            在回复的**最后**，你必须输出以下内容（原样复制格式，只替换中括号内的内容）：
             
-            ${{ env.ADMIN_RULES }}
+            ```
+            ---
+            ## 审查结论：✅ 批准
             
-            ### 如果修改了移动端代码（app/examples/mobile/）
+            **决策理由：** 代码质量良好，无阻塞性问题
             
-            ${{ env.MOBILE_RULES }}
+            **行动项：**
+            - [ ] 无
+            ---
+            ```
             
-            请只选择适用的规则进行审查，不要审查不相关的规则。
+            或者：
+            
+            ```
+            ---
+            ## 审查结论：⚠️ 有条件批准
+            
+            **决策理由：** 有小问题但不阻塞合并
+            
+            **行动项：**
+            - [ ] 补充文档
+            - [ ] 添加测试
+            ---
+            ```
+            
+            或者：
+            
+            ```
+            ---
+            ## 审查结论：❌ 拒绝
+            
+            **决策理由：** 存在严重问题必须修复
+            
+            **行动项：**
+            - [ ] 修复类型错误
+            - [ ] 修复测试失败
+            ---
+            ```
+            
+            ⚠️ 注意：
+            1. 必须以 `---` 开始和结束
+            2. 必须使用 `## 审查结论：` 作为标题（不是"总结"）
+            3. 必须三选一：✅ 批准 / ⚠️ 有条件批准 / ❌ 拒绝
+            4. 没有这个结论部分 = 审查无效
             
             请用中文回复。
