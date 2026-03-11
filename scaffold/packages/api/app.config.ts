@@ -1,4 +1,5 @@
 import type { AppConfig } from '@ai-partner-x/aiko-boot';
+import '@ai-partner-x/aiko-boot-starter-cache';
 
 export default {
   server: {
@@ -20,5 +21,11 @@ export default {
   validation: {
     enabled: true,
     failFast: false,
+  },
+  cache: {
+    enabled: false,
+    type: 'redis',
+    host: '127.0.0.1',
+    port: 6379,
   },
 } satisfies AppConfig;
