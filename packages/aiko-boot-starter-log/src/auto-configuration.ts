@@ -10,6 +10,7 @@
  */
 
 import type { LogConfig, LogLevel, TransportConfig } from './types';
+import { ConfigLoader } from '@ai-partner-x/aiko-boot/boot';
 
 /**
  * 日志配置属性类
@@ -35,9 +36,6 @@ const DEFAULT_CONFIG: LogConfig = {
 function loadConfig(): LogConfig {
   try {
     // 动态加载 ConfigLoader - 使用同步方式避免异步问题
-    const module = require('@ai-partner-x/aiko-boot/boot');
-    const ConfigLoader = module.ConfigLoader;
-    
     if (!ConfigLoader?.isLoaded?.()) return { ...DEFAULT_CONFIG };
     
     const raw = ConfigLoader.getPrefix('logging');

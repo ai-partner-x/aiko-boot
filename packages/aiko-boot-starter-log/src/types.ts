@@ -36,8 +36,7 @@ export interface ILogger {
 
   // ========== 日志输出方法 ==========
 
-  error(message: string, meta?: LogMeta): void;
-  error(message: string, error: Error, meta?: LogMeta): void;
+  error(message: string, errorOrMeta?: Error | LogMeta, meta?: LogMeta): void;
   warn(message: string, meta?: LogMeta): void;
   info(message: string, meta?: LogMeta): void;
   http(message: string, meta?: LogMeta): void;
@@ -138,4 +137,17 @@ export interface LogConfig {
   timestamp?: boolean;
   transports?: TransportConfig[];
   defaultMeta?: LogMeta;
+}
+
+/** Aiko Boot 应用上下文接口（可选依赖） */
+export interface AikoApplicationContext {
+  getBean?: <T>(type: new (...args: any[]) => T) => T | undefined;
+  isActive?: () => boolean;
+  [key: string]: unknown;
+}
+
+/** 动态导入错误类型 */
+export interface DynamicImportError extends Error {
+  code?: string;
+  type?: 'MODULE_NOT_FOUND' | 'NETWORK_ERROR' | 'PARSE_ERROR' | 'UNKNOWN';
 }

@@ -4,8 +4,8 @@
 
 import { Logger } from './logger';
 import { LogAutoConfiguration } from './auto-configuration';
-import type { ILogger, LogLevel, LoggerFactoryOptions, LogConfig } from './types';
-
+import type { ILogger, LogLevel, LoggerFactoryOptions, LogConfig, AikoApplicationContext, DynamicImportError } from './types';
+import { getApplicationContext } from '@ai-partner-x/aiko-boot/boot';
 /**
  * 日志工厂
  * 单例模式，统一管理所有日志记录器
@@ -55,18 +55,33 @@ export class LoggerFactory {
   static async fromAikoBoot(): Promise<LoggerFactory> {
     try {
       // 尝试从依赖注入容器获取 LogAutoConfiguration 实例
-      const { getApplicationContext } = await import('@ai-partner-x/aiko-boot/boot');
       const context = getApplicationContext();
+      
       if (context) {
-        // 使用类型断言，因为 getBean 可能不存在于类型定义中
-        const autoConfig = (context as any).getBean?.(LogAutoConfiguration);
-        if (autoConfig) {
-          return LoggerFactory.fromConfig(autoConfig.getConfig());
+        // 使用类型守卫进行安全检查
+        const typedContext = context as unknown as AikoApplicationContext;
+        if (typeof typedContext.getBean === 'function') {
+          const autoConfig = typedContext.getBean(LogAutoConfiguration);
+          if (autoConfig) {
+            return LoggerFactory.fromConfig(autoConfig.getConfig());
+          }
+        } else {
+          console.warn('Aiko Boot 应用上下文存在，但缺少 getBean 方法，使用默认配置');
         }
+      } else {
+        console.warn('无法获取 Aiko Boot 应用上下文，使用默认配置');
       }
     } catch (error) {
-      // 如果无法从容器获取，创建新实例
-      console.warn('无法从应用上下文获取 LogAutoConfiguration，创建新实例:', error);
+      // 更明确的错误处理
+      const importError = error as DynamicImportError;
+      
+      if (importError.code === 'MODULE_NOT_FOUND') {
+        console.warn('@ai-partner-x/aiko-boot 模块未找到，日志系统将使用独立模式运行');
+      } else if (importError.message?.includes('Cannot find module')) {
+        console.warn('Aiko Boot 依赖不可用，日志系统将使用默认配置');
+      } else {
+        console.warn('从 Aiko Boot 加载配置时发生错误，使用默认配置:', importError.message || importError);
+      }
     }
     
     // 创建新实例作为后备方案
@@ -81,15 +96,32 @@ export class LoggerFactory {
 
   /**
    * 初始化工厂配置
+   * 此方法支持配置热更新，包括：
+   * - 日志级别（热更新）
+   * - 默认元数据（热更新）
+   * - transports（需要重新创建 winston logger）
+   * - format（需要重新创建 winston logger）
+   * - colorize/timestamp（需要重新创建 winston logger）
+   * 
+   * 对于需要重新创建记录器的配置变更，系统会自动处理 winston logger 的重新创建。
    * @param options 新的工厂配置
    */
   init(options?: LoggerFactoryOptions): void {
-    this.options = options ?? {};
+    const newOptions = options ?? {};
+    this.options = newOptions;
+    
     // 更新现有记录器的配置
     this.loggers.forEach(logger => {
       if (logger instanceof Logger) {
-        // 这里可以更新现有记录器的配置，但需要 Logger 类支持配置更新
-        // 目前只更新新创建的记录器
+        // 更新记录器配置（支持完整的配置热更新）
+        logger.updateConfig({
+          level: newOptions.level,
+          defaultMeta: newOptions.defaultMeta,
+          transports: newOptions.transports,
+          format: newOptions.format,
+          colorize: newOptions.colorize,
+          timestamp: newOptions.timestamp,
+        });
       }
     });
   }

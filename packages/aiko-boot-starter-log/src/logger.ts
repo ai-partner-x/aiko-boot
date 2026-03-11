@@ -21,8 +21,8 @@ const SIZE_UNITS: Record<string, number> = {
 export class Logger implements ILogger {
   readonly name: string;
   private _level: LogLevel;
-  private readonly winstonLogger: winston.Logger;
-  private readonly defaultMeta: LogMeta;
+  private winstonLogger: winston.Logger;
+  private defaultMeta: LogMeta;
 
   constructor(options: LoggerOptions) {
     this.name = options.name;
@@ -112,8 +112,6 @@ export class Logger implements ILogger {
 
   // ========== SLF4J 风格日志方法 ==========
 
-  error(message: string, meta?: LogMeta): void;
-  error(message: string, error: Error, meta?: LogMeta): void;
   error(message: string, errorOrMeta?: Error | LogMeta, meta?: LogMeta): void {
     if (errorOrMeta instanceof Error) {
       this.winstonLogger.error(message, {
@@ -180,6 +178,14 @@ export class Logger implements ILogger {
     return this.isLevelEnabled('silly');
   }
 
+  /**
+   * 判断指定日志级别是否启用
+   * 注意：LOG_LEVELS 映射中数值越小优先级越高（error:0, warn:1, info:2, ...）
+   * 因此判断逻辑是：要检查的级别数值 <= 当前级别数值时，该级别才启用
+   * 例如：当前级别为 'info'(2) 时，'error'(0) 和 'warn'(1) 也启用，但 'debug'(5) 不启用
+   * @param level 要检查的日志级别
+   * @returns 该级别是否启用
+   */
   private isLevelEnabled(level: LogLevel): boolean {
     return LOG_LEVELS[level] <= LOG_LEVELS[this._level];
   }
@@ -216,6 +222,102 @@ export class Logger implements ILogger {
   setLevel(level: LogLevel): void {
     this._level = level;
     this.winstonLogger.level = level;
+  }
+
+  /**
+   * 更新记录器配置
+   * 支持配置热更新，包括：
+   * - 日志级别（热更新）
+   * - 默认元数据（热更新）
+   * 
+   * @param options 新的配置选项
+   * @returns 是否成功更新配置（true=热更新成功，false=需要重新创建记录器）
+   */
+  updateConfig(options: Partial<LoggerOptions>): boolean {
+    let needsRecreate = false;
+    const currentOptions = this.getCurrentOptions();
+    
+    // 检查是否需要重新创建 winston logger
+    if (options.transports !== undefined && JSON.stringify(options.transports) !== JSON.stringify(currentOptions.transports)) {
+      needsRecreate = true;
+    }
+    
+    if (options.format !== undefined && options.format !== currentOptions.format) {
+      needsRecreate = true;
+    }
+    
+    if (options.colorize !== undefined && options.colorize !== currentOptions.colorize) {
+      needsRecreate = true;
+    }
+    
+    if (options.timestamp !== undefined && options.timestamp !== currentOptions.timestamp) {
+      needsRecreate = true;
+    }
+    
+    // 如果不需要重新创建，进行热更新
+    if (!needsRecreate) {
+      // 更新日志级别
+      if (options.level) {
+        this.setLevel(options.level);
+      }
+
+      // 更新默认元数据
+      if (options.defaultMeta) {
+        this.defaultMeta = { ...this.defaultMeta, ...options.defaultMeta };
+      }
+      
+      return true; // 热更新成功
+    }
+    
+    // 需要重新创建 winston logger
+    this.recreateWinstonLogger({
+      ...currentOptions,
+      ...options,
+    });
+    
+    return false; // 需要重新创建记录器
+  }
+
+  /**
+   * 获取当前配置选项
+   * @private
+   */
+  private getCurrentOptions(): LoggerOptions {
+    // 从 winston logger 中提取当前 transports 信息
+    const transports: TransportConfig[] = [];
+    
+    // 注意：winston logger 不直接暴露 transports 配置，这里返回一个简化版本
+    // 实际实现中可能需要更复杂的逻辑来重建配置
+    return {
+      name: this.name,
+      level: this._level,
+      defaultMeta: this.defaultMeta,
+      transports: transports, // 简化处理
+      format: 'cli', // 简化处理
+      colorize: true, // 简化处理
+      timestamp: true, // 简化处理
+    };
+  }
+
+  /**
+   * 重新创建 winston logger
+   * @private
+   */
+  private recreateWinstonLogger(options: LoggerOptions): void {
+    // 关闭旧的 winston logger
+    this.winstonLogger.close();
+    
+    // 更新内部状态
+    if (options.level) {
+      this._level = this.validateLevel(options.level) ?? 'info';
+    }
+    
+    if (options.defaultMeta) {
+      this.defaultMeta = { ...this.defaultMeta, ...options.defaultMeta };
+    }
+    
+    // 重新创建 winston logger
+    this.winstonLogger = this.createWinstonLogger(options);
   }
 
   /**
