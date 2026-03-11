@@ -32,7 +32,7 @@ export class MenuService {
 
   @Transactional()
   async createMenu(dto: CreateMenuDto) {
-    return this.menuMapper.insert({
+    await this.menuMapper.insert({
       parentId: dto.parentId ?? 0,
       menuName: dto.menuName,
       menuType: dto.menuType,
@@ -43,6 +43,8 @@ export class MenuService {
       sortOrder: dto.sortOrder ?? 0,
       status: dto.status ?? 1,
     });
+    const menus = await this.menuMapper.selectList({ menuName: dto.menuName });
+    return menus[0] || null;
   }
 
   @Transactional()

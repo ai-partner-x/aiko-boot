@@ -46,7 +46,7 @@ export class UserService {
     const exists = await this.userMapper.selectByUsername(dto.username);
     if (exists) throw new Error('用户名已存在');
     const hashed = await bcrypt.hash(dto.password, 10);
-    const user = await this.userMapper.insert({
+    await this.userMapper.insert({
       username: dto.username,
       password: hashed,
       realName: dto.realName,
@@ -56,6 +56,8 @@ export class UserService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+    const user = await this.userMapper.selectByUsername(dto.username);
+    if (!user) throw new Error('创建用户失败');
     if (dto.roleIds?.length) await this.assignRoles(user.id, dto.roleIds);
     return this.toVo(this.parseEntityDates(user));
   }
@@ -127,9 +129,11 @@ export class UserService {
 
   private async toVo(user: any): Promise<UserVo> {
     const userRoles = await this.userRoleMapper.selectList({ userId: user.id });
+    console.log('[userRoles] userRoles:', userRoles);
     const roles: string[] = [];
     for (const ur of userRoles) {
       const role = await this.roleMapper.selectById(ur.roleId);
+      console.log('[role] role:', role);
       if (role) roles.push(role.roleCode);
     }
     const { password: _p, ...safe } = user;

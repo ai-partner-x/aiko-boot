@@ -28,16 +28,18 @@ export class RoleService {
   async createRole(dto: CreateRoleDto) {
     const exists = await this.roleMapper.selectList({ roleCode: dto.roleCode });
     if (exists.length) throw new Error('角色编码已存在');
-    const role = await this.roleMapper.insert({
+    await this.roleMapper.insert({
       roleCode: dto.roleCode,
       roleName: dto.roleName,
       description: dto.description,
       status: dto.status ?? 1,
       createdAt: new Date().toISOString(),
     });
+    const roles = await this.roleMapper.selectList({ roleCode: dto.roleCode });
+    const role = roles[0];
+    if (!role) throw new Error('创建角色失败');
     if (dto.menuIds?.length) {
-      const roleId = typeof role === 'number' ? role : (role.id || role);
-      await this.assignMenus(roleId, dto.menuIds);
+      await this.assignMenus(role.id, dto.menuIds);
     }
     return this.parseEntityDates(role);
   }
