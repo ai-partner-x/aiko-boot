@@ -9,14 +9,14 @@ export default defineConfig([
     external: [/^@ai-partner-x\//, 'reflect-metadata', 'express', 'cors'],
   },
   {
-    // Compile app.config.ts → app.config.js into a dedicated build directory so that
-    // production can load it via ConfigLoader.loadAsync() without a generated .js
-    // file in the project root overriding the source app.config.ts during dev.
+    // Compile app.config.ts → app.config.js into the project root so that
+    // production can load it via ConfigLoader.loadAsync(), which expects
+    // app.config.js to reside next to app.config.ts.
     entry: { 'app.config': 'app.config.ts' },
     format: ['esm'],
     dts: false,
     clean: false,
-    outDir: 'dist/config',
+    outDir: '.',
     external: [/^@ai-partner-x\//, 'reflect-metadata'],
   },
 ]);
