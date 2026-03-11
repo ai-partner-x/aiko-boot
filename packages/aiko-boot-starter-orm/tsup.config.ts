@@ -3,16 +3,17 @@ import { defineConfig } from 'tsup';
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
-  dts: true,
+  dts: false,
   clean: true,
   sourcemap: true,
+  noExternal: ['reflect-metadata'],
   external: [
     '@mikro-orm/core',
     '@mikro-orm/sqlite',
     '@mikro-orm/postgresql',
     '@mikro-orm/mysql',
-    'pg',
     'mysql2',
-    'better-sqlite3',
+    'pg',
+    'pg-types'
   ],
 });
