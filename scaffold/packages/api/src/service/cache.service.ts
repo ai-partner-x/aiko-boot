@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Service } from '@ai-partner-x/aiko-boot';
-import { CacheManager, getCacheManager, isCacheManagerInitialized } from '@ai-partner-x/aiko-boot-starter-cache';
+import type { CacheManager } from '@ai-partner-x/aiko-boot-starter-cache';
+import { getCacheManager, isCacheManagerInitialized } from '@ai-partner-x/aiko-boot-starter-cache';
 import type { CacheGetDto, CachePutDto, CacheEvictDto, CacheClearDto } from '../dto/cache.dto.js';
 
 @Service()
