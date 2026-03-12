@@ -20,12 +20,13 @@ afterEach(() => {
 });
 
 // Mock 依赖的模块
-vi.mock('multer', () => ({
-  default: () => ({
+vi.mock('multer', () => {
+  const multerFn: any = vi.fn(() => ({
     fields: vi.fn().mockReturnValue(vi.fn()),
-    memoryStorage: vi.fn(),
-  }),
-}));
+  }));
+  multerFn.memoryStorage = vi.fn();
+  return { default: multerFn };
+});
 
 vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
@@ -69,6 +70,8 @@ vi.mock('@ai-partner-x/aiko-boot/boot', () => {
     Controller: vi.fn(),
     Configuration: vi.fn(),
     Bean: vi.fn(),
+    ConfigurationProperties: vi.fn(),
+    OnApplicationReady: vi.fn(),
   };
 });
 
@@ -78,6 +81,7 @@ vi.mock('@ai-partner-x/aiko-boot/di/server', () => ({
   Singleton: () => (target: any) => target,
   inject: () => (target: any, key: string) => {},
   injectAutowiredProperties: vi.fn(),
+  Container: vi.fn(),
 }));
 
 // 全局导出 mock 引用，供测试文件访问和修改
@@ -86,6 +90,12 @@ declare global {
   var __mockConfigLoader: any;
   // eslint-disable-next-line no-var
   var __mockGetApplicationContext: any;
+  // eslint-disable-next-line no-var
+  var testHelpers: {
+    createMockTransport: (type?: 'console' | 'file' | 'stream') => any;
+    createMockLoggerConfig: (name?: string) => any;
+    waitFor: (ms: number) => Promise<void>;
+  };
 }
 
 // 在测试中可以通过 globalThis.__mockConfigLoader 访问和修改 mock 行为

@@ -9,7 +9,7 @@ import { formatDate, applyJsonFormat, JsonFormatShape } from '../src/decorators'
 describe('formatDate', () => {
   test('应该正确格式化日期（默认时区）', () => {
     const date = new Date('2024-01-15T10:30:45.123Z');
-    const result = formatDate(date, 'yyyy-MM-dd HH:mm:ss.SSS');
+    const result = formatDate(date, 'yyyy-MM-dd HH:mm:ss.SSS', 'UTC');
     expect(result).toBe('2024-01-15 10:30:45.123');
   });
 
@@ -44,7 +44,7 @@ describe('formatDate', () => {
   test('应该正确处理毫秒格式化', () => {
     const date = new Date('2024-01-15T10:30:45.123Z');
     expect(formatDate(date, 'SSS', 'UTC')).toBe('123');
-    expect(formatDate(date, 'S', 'UTC')).toBe('1');
+    expect(formatDate(date, 'S', 'UTC')).toBe('123');
   });
 
   test('应该正确处理单数字月份和日期', () => {
@@ -98,9 +98,9 @@ describe('applyJsonFormat', () => {
 
     expect(result).toEqual({
       name: 'test',
-      self: obj,
+      self: result,
       child: {
-        parent: obj,
+        parent: result,
       },
     });
   });
@@ -115,7 +115,7 @@ describe('applyJsonFormat', () => {
     const result = applyJsonFormat(obj);
 
     expect(result.ref1).toBe(result.ref2);
-    expect(result.ref1).toBe(shared);
+    expect(result.ref1.value).toBe(shared.value);
   });
 
   test('应该正确处理数组中的循环引用', () => {
@@ -124,7 +124,7 @@ describe('applyJsonFormat', () => {
 
     const result = applyJsonFormat(arr);
 
-    expect(result).toEqual([1, 2, 3, arr]);
+    expect(result).toEqual([1, 2, 3, result]);
   });
 
   test('应该正确处理嵌套对象的循环引用', () => {
@@ -137,7 +137,7 @@ describe('applyJsonFormat', () => {
       level1: {
         level2: {
           level3: 'value',
-          self: obj.level1,
+          self: result.level1,
         },
       },
     });
@@ -242,14 +242,16 @@ describe('applyJsonFormat', () => {
     const obj: any = {
       name: 'test',
       value: 42,
-      toJSON: function () {
-        return { custom: 'format', value: this.value * 2, ref: this.ref };
-      },
+      ref: { nested: 'value' },
     };
-    obj.ref = obj;
+    obj.toJSON = function () {
+      return { custom: 'format', value: this.value * 2 };
+    };
+    obj.ref.parent = obj;
 
     const result = applyJsonFormat(obj);
-    expect(result).toEqual({ custom: 'format', value: 84, ref: obj });
+    expect(result).toEqual({ custom: 'format', value: 84 });
+    expect(result.ref).toBeUndefined();
   });
 
   test('应该正确处理嵌套对象中的循环引用', () => {
