@@ -191,7 +191,14 @@ export class WebAutoConfiguration {
           maxFileSize: parseSizeToBytes(maxFileSizeStr),
         };
       } catch (e: any) {
-        console.error(`[aiko-web] Misconfigured spring.servlet.multipart.maxFileSize: ${e.message}. Multipart file uploads will be disabled due to this misconfiguration.`);
+        // Fall back to default 1MB instead of disabling multipart, so controllers
+        // using @RequestPart don't cause a confusing fail-fast error at route registration.
+        const fallbackBytes = 1024 * 1024; // 1MB
+        console.error(
+          `[aiko-web] Misconfigured spring.servlet.multipart.maxFileSize: ${e.message}. ` +
+          `Falling back to default 1MB (${fallbackBytes} bytes).`,
+        );
+        multipartOptions = { maxFileSize: fallbackBytes };
       }
     }
 
