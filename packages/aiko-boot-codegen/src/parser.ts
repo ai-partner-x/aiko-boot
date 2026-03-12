@@ -245,9 +245,9 @@ function parseInterface(node: ts.InterfaceDeclaration, sourceFile: ts.SourceFile
 /**
  * Parse decorators from a node
  */
-function parseDecorators(node: ts.HasDecorators, sourceFile: ts.SourceFile): ParsedDecorator[] {
+function parseDecorators(node: ts.Node, sourceFile: ts.SourceFile): ParsedDecorator[] {
   const decorators: ParsedDecorator[] = [];
-  const nodeDecorators = ts.getDecorators(node);
+  const nodeDecorators = ts.getDecorators(node as ts.HasDecorators);
   
   if (!nodeDecorators) return decorators;
 
