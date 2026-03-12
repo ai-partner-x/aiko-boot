@@ -53,18 +53,6 @@ export class MultipartProperties {
   enabled?: boolean = true;
   /** 单个上传文件最大大小，默认 1MB (Spring Boot: spring.servlet.multipart.max-file-size) */
   maxFileSize?: string = '1MB';
-  /**
-   * 整个 multipart 请求最大大小，默认 10MB (Spring Boot: spring.servlet.multipart.max-request-size)
-   *
-   * 注意：
-   * - 此配置项当前仅作为**配置值**存在，框架本身并不会自动对 multipart/form-data 请求施加大小限制。
-   * - `server.maxHttpPostSize` / `express.json()` 只会影响 JSON / urlencoded 等非 multipart 请求体大小，
-   *   对 multipart/form-data 上传**不起作用**。
-   *
-   * 如需真正限制 multipart/form-data 请求的整体大小，请在应用层使用 multer、busboy 等中间件的
-   * limit 配置，或编写专用中间件（可读取本配置项）来检查请求体大小。
-   */
-  maxRequestSize?: string = '10MB';
 }
 
 /**

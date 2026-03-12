@@ -32,7 +32,6 @@ export default {
       multipart: {
         enabled: true,
         maxFileSize: '10MB',      // 单个文件最大 10 MB
-        maxRequestSize: '50MB',   // 整个请求最大 50 MB
       },
     },
   },

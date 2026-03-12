@@ -267,6 +267,58 @@ export function ModelAttribute(name?: string) {
 }
 
 /**
+ * Type conversion helper for @ModelAttribute parameters
+ * 
+ * Automatically converts string values to appropriate types (number, boolean) when possible.
+ * This helper reduces manual type conversion in controller methods.
+ * 
+ * @example
+ * // Without helper (manual conversion required)
+ * @GetMapping('/search')
+ * async search(@ModelAttribute() query: SearchDto) {
+ *   return {
+ *     page: Number(query.page ?? 1),
+ *     size: Number(query.size ?? 10),
+ *     active: query.active === 'true',
+ *   };
+ * }
+ * 
+ * // With helper (automatic conversion)
+ * @GetMapping('/search')
+ * async search(@ModelAttribute() query: SearchDto) {
+ *   const parsed = convertModelAttributes(query);
+ *   return {
+ *     page: parsed.page ?? 1,
+ *     size: parsed.size ?? 10,
+ *     active: parsed.active ?? false,
+ *   };
+ * }
+ */
+export function convertModelAttributes<T extends Record<string, unknown>>(input: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  
+  for (const [key, value] of Object.entries(input)) {
+    if (typeof value === 'string') {
+      // Try to convert to number
+      const numValue = Number(value);
+      if (!isNaN(numValue) && value.trim() !== '') {
+        result[key] = numValue;
+      } else if (value.toLowerCase() === 'true') {
+        result[key] = true;
+      } else if (value.toLowerCase() === 'false') {
+        result[key] = false;
+      } else {
+        result[key] = value;
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+  
+  return result;
+}
+
+/**
  * @RequestAttribute - Extract a named attribute set on the Express request object
  * by upstream middleware (like Spring Boot @RequestAttribute).
  *
@@ -337,6 +389,8 @@ const SORTED_DATE_TOKEN_KEYS: ReadonlyArray<string> = [
  * Serialization shape for @JsonFormat.
  * - `STRING` (default): serialize Date as a formatted string (uses `pattern`)
  * - `NUMBER`: serialize Date as epoch milliseconds (Unix timestamp × 1000)
+ * 
+ * @default 'STRING'
  */
 export type JsonFormatShape = 'STRING' | 'NUMBER';
 
@@ -536,7 +590,11 @@ export function applyJsonFormat(value: unknown, visited: WeakMap<object, unknown
       Buffer.isBuffer(value) ||
       value instanceof Map ||
       value instanceof Set ||
-      value instanceof Error
+      value instanceof Error ||
+      value instanceof Uint8Array ||
+      value instanceof RegExp ||
+      value instanceof URL ||
+      value instanceof Date
     ) {
       return value;
     }

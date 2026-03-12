@@ -74,11 +74,6 @@ export function RequestPart(name?: string) {
 export class MultipartProperties {
   enabled?: boolean = true;
   maxFileSize?: string = '1MB';     // spring.servlet.multipart.max-file-size
-  /**
-   * 注意：此配置项不会被框架自动强制执行。
-   * 如需限制整体请求体大小，请通过 server.maxHttpPostSize 配置。
-   */
-  maxRequestSize?: string = '10MB'; // spring.servlet.multipart.max-request-size (not enforced)
 }
 ```
 

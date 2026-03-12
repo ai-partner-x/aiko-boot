@@ -34,7 +34,6 @@ export default {
       multipart: {
         enabled: true,
         maxFileSize: '10MB',     // spring.servlet.multipart.max-file-size
-        maxRequestSize: '50MB',  // spring.servlet.multipart.max-request-size
       },
     },
   },

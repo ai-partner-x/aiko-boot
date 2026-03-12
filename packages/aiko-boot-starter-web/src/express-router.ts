@@ -67,7 +67,7 @@ type MulterFile = {
   buffer: Buffer;
 };
 
-type AnyRequest  = {
+type AnyRequest = {
   params: Record<string, string>;
   query: Record<string, string>;
   body: any;
@@ -75,9 +75,17 @@ type AnyRequest  = {
   files?: Record<string, MulterFile[]>;
   [key: string]: any;
 };
-type AnyResponse = { json: (data: any) => void; status: (code: number) => AnyResponse };
-type NextFn      = (err?: any) => void;
-type Handler     = (req: AnyRequest, res: AnyResponse, next: NextFn) => void;
+
+type AnyResponse = {
+  json: (data: any) => AnyResponse;
+  status: (code: number) => AnyResponse;
+  set?: (key: string, value: string) => AnyResponse;
+  send?: (body?: any) => AnyResponse;
+};
+
+type NextFn = (err?: any) => void;
+
+type Handler = (req: AnyRequest, res: AnyResponse, next: NextFn) => void | Promise<void>;
 
 interface MiniRouter {
   get(path: string, ...handlers: any[]): void;
@@ -245,9 +253,12 @@ function registerController(
         // 注入 @ModelAttribute (合并 query + body 表单字段)
         for (const idx of Object.keys(modelAttrs)) {
           const queryObj = req.query || {};
-          const bodyObj  = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body))
+          const bodyObj = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body) && !Array.isArray(req.body))
             ? req.body
             : {};
+          if (Array.isArray(req.body)) {
+            console.warn('[aiko-boot] @ModelAttribute received array body. Only object types are supported. Using empty object.');
+          }
           args[Number(idx)] = { ...queryObj, ...bodyObj };
         }
 
