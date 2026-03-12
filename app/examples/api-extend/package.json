@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-partner-x/aiko-boot": "workspace:*",
     "@ai-partner-x/aiko-boot-starter-web": "workspace:*",
+    "@ai-partner-x/aiko-boot-starter-storage": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.18.0",
     "reflect-metadata": "^0.2.1"
