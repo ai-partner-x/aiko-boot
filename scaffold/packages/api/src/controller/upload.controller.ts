@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { RestController, PostMapping, DeleteMapping, GetMapping, RequestParam } from '@ai-partner-x/aiko-boot-starter-web';
+import { RestController, PostMapping, DeleteMapping, GetMapping, RequestParam, RequestPart, MultipartFile } from '@ai-partner-x/aiko-boot-starter-web';
 import { Autowired } from '@ai-partner-x/aiko-boot';
 import { StorageService, type UploadResult } from '@ai-partner-x/aiko-boot-starter-storage';
 import type { Request } from 'express';
@@ -23,16 +23,12 @@ export class UploadController {
    *   -F "folder=images"
    */
   @PostMapping('/')
-  async upload(req: Request): Promise<UploadResult> {
-    const file = (req as Request & { file?: Express.Multer.File }).file;
-    if (!file) {
-      throw new Error('No file uploaded');
-    }
-
-    const folder = (req.body?.folder as string) || 'uploads';
-
+  async upload(
+    @RequestPart('file') file: MultipartFile,
+    @RequestPart('folder') folder?: string,
+  ): Promise<UploadResult> {
     return this.storageService.upload(file.buffer, file.originalname, {
-      folder,
+      folder: folder || 'uploads',
       maxSize: 10 * 1024 * 1024, // 10MB
       allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     });
