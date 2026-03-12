@@ -79,7 +79,11 @@ export class CacheController {
     if (!normalizedAllEntries && (!key || key.trim() === '')) {
       throw new Error('Query parameter "key" is required when "allEntries" is not true.');
     }
-    await this.cacheService.evict({ name, key: key!, allEntries: normalizedAllEntries });
+    if (normalizedAllEntries) {
+      await this.cacheService.evict({ name, allEntries: normalizedAllEntries });
+    } else {
+      await this.cacheService.evict({ name, key: key!, allEntries: normalizedAllEntries });
+    }
     return { ok: true };
   }
 
