@@ -27,6 +27,7 @@ export {
   ModelAttribute,
   RequestAttribute,
   JsonFormat,
+  convertModelAttributes,
   applyJsonFormat,
   formatDate,
   getControllerMetadata,

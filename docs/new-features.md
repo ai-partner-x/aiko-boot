@@ -77,7 +77,7 @@ export class MultipartProperties {
 }
 ```
 
-`WebAutoConfiguration` 启动时读取该配置并将大小限制传递给 multer，同时用 `server.maxHttpPostSize` 控制 JSON body-parser 的限制：
+`WebAutoConfiguration` 启动时读取该配置并将单文件大小限制传递给 multer。注意：`server.maxHttpPostSize` 仅控制 JSON body-parser（`express.json({ limit })`）的大小限制，**对 multipart/form-data 请求不起作用**。如需限制整体 multipart 请求大小，请使用 multer/busboy limits 或专用中间件：
 
 ```typescript
 // packages/aiko-boot-starter-web/src/auto-configuration.ts (WebAutoConfiguration)
@@ -90,13 +90,13 @@ const multipartMaxFileSizeStr =
   ConfigLoader.get<string>('spring.servlet.multipart.maxFileSize', '1MB');
 const multipartOptions = multipartEnabled
   ? { maxFileSize: parseSizeToBytes(multipartMaxFileSizeStr) }  // "1MB" → 1048576
-  : undefined;  // undefined 表示禁用 multer 中间件
+  : undefined;  // undefined 表示禁用；使用 @RequestPart 的路由会在注册时 throw
 
 app.use(express.json({ limit: resolvedBodyLimit }));
 app.use(createExpressRouter(validControllers, {
   prefix: contextPath,
   verbose,
-  multipart: multipartOptions,   // undefined = 禁用上传; { maxFileSize } = 启用
+  multipart: multipartOptions,   // undefined = 禁用上传（含 @RequestPart 的路由将在注册时抛出错误）
 }));
 ```
 
@@ -551,19 +551,19 @@ curl http://localhost:3003/api/users/1
 
 `@Async` 来自 `@ai-partner-x/aiko-boot`，对应 Spring Boot 的 `@Async`（fire-and-forget 语义）：
 
-- 调用方**立即**收到 `void` 返回值，HTTP 响应几乎在 0ms 内返回。
+- 被装饰方法立即返回一个已 resolve 的 `Promise<void>`（fire-and-forget），HTTP 响应几乎在 0ms 内返回。
 - 被装饰方法的真实逻辑通过 `setImmediate` 在下一个事件循环 tick 中执行，与调用方的执行路径完全解耦。
 - 支持通过 `onError` 选项自定义后台异常处理器，后台异常不会影响调用方，也不会造成未处理的 Promise 拒绝。
 - `@ai-partner-x/aiko-boot-starter-web` 重新导出 `@Async`，使开发者可以从一个包完成所有导入。
 
 | TypeScript | Java Spring 对应 |
 |---|---|
-| `@Async()` | `@Async`（返回 `void`，fire-and-forget） |
+| `@Async()` | `@Async`（返回 `Promise<void>`，fire-and-forget） |
 | `@Async({ onError })` | `@Async` + `AsyncUncaughtExceptionHandler` |
 
 ### 开发思路
 
-1. **装饰器包装原方法**：`@Async` 将原始方法替换为一个立即返回 `void` 的同步函数，原始逻辑被推入 `setImmediate` 队列。
+1. **装饰器包装原方法**：`@Async` 将原始方法替换为一个立即返回已 resolve 的 `Promise<void>` 的函数，原始逻辑被推入 `setImmediate` 队列。`await` 被装饰方法**不会**等待后台任务完成。
 2. **错误隔离**：通过 `try/catch` 包裹后台逻辑；若用户未提供 `onError`，则使用默认的 `console.error` 处理器。这确保后台任务的任何异常都不会变成未处理的 Promise 拒绝，也不会向调用方传播。
 3. **DI 兼容**：`@Async` 仅修改方法描述符，与 `@Service` / `@Component` 正交，可同时使用，无需特殊配置。
 4. **统一导出**：`@ai-partner-x/aiko-boot-starter-web` 将 `@Async` 重新导出，Web 层开发者无需额外依赖 `@ai-partner-x/aiko-boot`。
@@ -578,7 +578,7 @@ export interface AsyncOptions {
    * 后台任务抛出未处理异常时的回调。
    * 默认行为：console.error
    */
-  onError?: (error: unknown, methodName: string) => void;
+  onError?: (error: unknown, methodName: string) => void | Promise<void>;
 }
 ```
 
@@ -600,7 +600,17 @@ export function Async(options: AsyncOptions = {}) {
           await original.apply(ctx, args);
         } catch (error) {
           const handler = options.onError ?? defaultAsyncErrorHandler;
-          handler(error, propertyKey);
+          try {
+            await handler(error, propertyKey);
+          } catch (handlerError) {
+            if (handler !== defaultAsyncErrorHandler) {
+              try {
+                await defaultAsyncErrorHandler(handlerError, propertyKey);
+              } catch {
+                // Swallow to ensure @Async never crashes the process
+              }
+            }
+          }
         }
       });
       // Return a resolved Promise so callers can safely call .catch() on the result
