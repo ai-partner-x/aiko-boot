@@ -33,10 +33,12 @@ const FRAMEWORK_REGISTRY_VERSION = '^0.1.0';
 const FRAMEWORK_PACKAGE_NAMES = [
   'aiko-boot',
   'aiko-boot-codegen',
+  'aiko-boot-starter-cache',
   'aiko-boot-starter-orm',
   'aiko-boot-starter-validation',
   'aiko-boot-starter-web',
   'aiko-boot-starter-storage',
+  'aiko-boot-starter-security',
 ] as const;
 
 export type CreateOptions = {
