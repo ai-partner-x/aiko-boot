@@ -34,10 +34,9 @@ export class CacheController {
   async get(
     @RequestParam('name') name: string,
     @RequestParam('key') key: string,
-  ): Promise<{ value: string | null }> {
+  ): Promise<string | null> {
     this.assertNonProduction();
-    const value = await this.cacheService.get({ name, key });
-    return { value };
+    return this.cacheService.get({ name, key });
   }
 
   /**
@@ -75,15 +74,10 @@ export class CacheController {
     const normalizedAllEntries =
       typeof allEntries === 'string' ? allEntries === 'true' : undefined;
 
-    // 当 allEntries 不为 true 时，必须提供 key
-    if (!normalizedAllEntries && (!key || key.trim() === '')) {
+    if (!allEntries && !key) {
       throw new Error('Query parameter "key" is required when "allEntries" is not true.');
     }
-    if (normalizedAllEntries) {
-      await this.cacheService.evict({ name, allEntries: normalizedAllEntries });
-    } else {
-      await this.cacheService.evict({ name, key: key!, allEntries: normalizedAllEntries });
-    }
+
     return { ok: true };
   }
 

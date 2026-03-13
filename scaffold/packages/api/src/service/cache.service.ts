@@ -39,11 +39,7 @@ export class CacheService {
 
     let value: string;
     try {
-      const serialized = JSON.stringify(dto.value);
-      if (serialized === undefined) {
-        throw new Error('Cache value is not JSON-serializable.');
-      }
-      value = serialized;
+      value = JSON.stringify(dto.value);
     } catch (err) {
       throw new Error('Cache value is not JSON-serializable.');
     }
