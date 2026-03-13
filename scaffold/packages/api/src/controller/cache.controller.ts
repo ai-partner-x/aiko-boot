@@ -71,10 +71,8 @@ export class CacheController {
     @RequestParam('allEntries') allEntries?: string,
   ): Promise<{ ok: boolean }> {
     this.assertNonProduction();
-    const normalizedAllEntries =
-      typeof allEntries === 'string' ? allEntries === 'true' : undefined;
-
-    if (!allEntries && !key) {
+    const isAllEntries = allEntries === 'true';
+    if (!isAllEntries && !key) {
       throw new Error('Query parameter "key" is required when "allEntries" is not true.');
     }
 
