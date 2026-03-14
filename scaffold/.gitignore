@@ -29,3 +29,6 @@ data/*.db
 # Uploads (keep .gitkeep)
 packages/api/uploads/*
 !packages/api/uploads/.gitkeep
+examples/storage-upload/uploads/*
+!examples/storage-upload/uploads/.gitkeep
+examples/storage-upload/data/*.db

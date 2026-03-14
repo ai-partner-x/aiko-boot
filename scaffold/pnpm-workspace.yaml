@@ -2,3 +2,4 @@ packages:
   - 'packages/*'
   - '../packages/*'
   - '../app/framework/admin-component'
+  - 'examples/*'
