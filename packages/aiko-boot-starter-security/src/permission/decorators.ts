@@ -10,6 +10,7 @@ const METHOD_PERMISSION_METADATA = 'aiko-boot:methodPermission';
 const BUTTON_PERMISSION_METADATA = 'aiko-boot:buttonPermission';
 const ROLE_PERMISSION_METADATA = 'aiko-boot:rolePermission';
 const MENU_PERMISSION_METADATA = 'aiko-boot:menuPermission';
+const OTHER_PERMISSION_METADATA = 'other:permission';  // 添加常量
 
 /**
  * 权限定义接口
@@ -17,6 +18,10 @@ const MENU_PERMISSION_METADATA = 'aiko-boot:menuPermission';
 export interface PermissionDefinition {
   /** 权限类型 */
   type: PermissionType;
+  /** 权限码 */
+  permissionCode?: string;  // ✅ 添加
+  /** 数据权限范围 */
+  dataScope?: string;  // ✅ 添加
   /** 资源标识 */
   resource: string;
   /** 操作标识 */
@@ -398,7 +403,7 @@ export function DataPermission(dataScope: string, options?: {
       group: options?.group || '数据安全',
       dataScope,
     };
-    Reflect.defineMetadata('other:' + dataScope, permission, target, propertyKey);
+    Reflect.defineMetadata(OTHER_PERMISSION_METADATA, permission, target, propertyKey);  // 使用常量键
     return descriptor;
   };
 }

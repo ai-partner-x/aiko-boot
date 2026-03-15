@@ -37,13 +37,15 @@ export class PermissionInterceptor {
     const apiPermission = getApiPermissionMetadata(target, request.method.toLowerCase());
     const methodPermission = getMethodPermissionMetadata(target, request.method.toLowerCase());
     const buttonPermission = getButtonPermissionMetadata(target, request.method.toLowerCase());
+    const menuPermission = getMenuPermissionMetadata(target, request.method.toLowerCase());  // 添加菜单权限检查
+    const rolePermission = getRolePermissionMetadata(target, request.method.toLowerCase());  // 添加角色权限检查
 
     // 检查传统权限装饰器
     const preAuthorize = getPreAuthorizeMetadata(target, request.method.toLowerCase());
     const secured = getSecuredMetadata(target, request.method.toLowerCase());
 
     // 如果没有任何权限要求，直接放行
-    if (!apiPermission && !methodPermission && !buttonPermission && !preAuthorize && (!secured || secured.length === 0)) {
+    if (!apiPermission && !methodPermission && !buttonPermission && !menuPermission && !rolePermission && !preAuthorize && (!secured || secured.length === 0)) {
       next();
       return;
     }
@@ -83,11 +85,32 @@ export class PermissionInterceptor {
         return;
       }
     }
+    // 2.1 检查菜单权限
+    if (menuPermission) {
+      const canAccess = await this.permissionGuard.canActivate(user, menuPermission);
+      if (!canAccess) {
+        this.sendForbidden(response, `Access denied. Required menu permission: ${this.generatePermissionCode(menuPermission)}`);
+        return;
+      }
+    }
+    // 2.2 检查角色权限
+    if (rolePermission) {
+      const canAccess = await this.permissionGuard.canActivate(user, rolePermission);
+      if (!canAccess) {
+        this.sendForbidden(response, `Access denied. Required role permission: ${this.generatePermissionCode(rolePermission)}`);
+        return;
+      }
+    }
 
     if (secured && secured.length > 0) {
-      const canAccess = await this.permissionGuard.canActivateWithPermissions(user, secured);
+      // 合并所有权限要求（包括菜单和角色权限）
+      const allPermissions = [...secured];
+      if (menuPermission) allPermissions.push(menuPermission);
+      if (rolePermission) allPermissions.push(rolePermission);
+
+      const canAccess = await this.permissionGuard.canActivateWithPermissions(user, allPermissions);
       if (!canAccess) {
-        this.sendForbidden(response, 'Access denied. Required permissions: ' + secured.join(', '));
+        this.sendForbidden(response, 'Access denied. Required permissions: ' + allPermissions.map(p => this.generatePermissionCode(p)).join(', '));
         return;
       }
     }
