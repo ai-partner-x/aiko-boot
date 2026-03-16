@@ -44,7 +44,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build all packages
-        run: pnpm build
+        run: pnpm --filter "./packages/**" -r build
 
       - name: Publish packages
         if: ${{ github.event.inputs.dry_run != 'true' }}
