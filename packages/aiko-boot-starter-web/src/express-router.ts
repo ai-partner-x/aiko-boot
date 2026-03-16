@@ -23,6 +23,7 @@ import {
   getRequestBody,
   getRequestParams,
   getRequestParts,
+  getRequestHeaders,
   getModelAttributes,
   getRequestAttributes,
   applyJsonFormat,
@@ -165,6 +166,7 @@ function registerController(
     const pathVars        = getPathVariables(ControllerClass.prototype, methodName);
     const bodyParams      = getRequestBody(ControllerClass.prototype, methodName);
     const queryParams     = getRequestParams(ControllerClass.prototype, methodName);
+    const headerParams    = getRequestHeaders(ControllerClass.prototype, methodName);
     const partParams      = getRequestParts(ControllerClass.prototype, methodName);
     const modelAttrs      = getModelAttributes(ControllerClass.prototype, methodName);
     const requestAttrs    = getRequestAttributes(ControllerClass.prototype, methodName);
@@ -232,6 +234,16 @@ function registerController(
         for (const [idx, param] of Object.entries(queryParams)) {
           const { name } = param as { name: string; required: boolean };
           args[Number(idx)] = req.query[name];
+        }
+
+        // 注入 @RequestHeader
+        for (const [idx, param] of Object.entries(headerParams)) {
+          const { name } = param as { name: string; required: boolean };
+          const headerValue = req.headers[name.toLowerCase()]; // Headers are case-insensitive
+          if (!headerValue && param.required) {
+            throw new Error(`Header "${name}" is required but not provided.`);
+          }
+          args[Number(idx)] = headerValue || '';
         }
 
         // 注入 @RequestPart (multipart file upload)

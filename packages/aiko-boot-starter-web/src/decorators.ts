@@ -11,6 +11,7 @@ const REQUEST_MAPPING_METADATA = 'aiko-boot:requestMapping';
 const PATH_VARIABLE_METADATA = 'aiko-boot:pathVariable';
 const REQUEST_PARAM_METADATA = 'aiko-boot:requestParam';
 const REQUEST_BODY_METADATA = 'aiko-boot:requestBody';
+const REQUEST_HEADER_METADATA = 'aiko-boot:requestHeader';
 const REQUEST_PART_METADATA = 'aiko-boot:requestPart';
 const MODEL_ATTRIBUTE_METADATA = 'aiko-boot:modelAttribute';
 const REQUEST_ATTRIBUTE_METADATA = 'aiko-boot:requestAttribute';
@@ -374,6 +375,10 @@ export function getRequestParams(target: any, methodName: string): Record<number
 
 export function getRequestBody(target: any, methodName: string): Record<number, boolean> {
   return Reflect.getMetadata(REQUEST_BODY_METADATA, target, methodName) || {};
+}
+
+export function getRequestHeaders(target: any, methodName: string): Record<number, { name: string; required: boolean }> {
+  return Reflect.getMetadata(REQUEST_HEADER_METADATA, target, methodName) || {};
 }
 
 export function getRequestParts(target: any, methodName: string): Record<number, { name: string }> {
