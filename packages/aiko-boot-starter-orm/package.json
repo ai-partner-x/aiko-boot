@@ -55,5 +55,9 @@
     "postgres",
     "decorator",
     "typescript"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  }
 }

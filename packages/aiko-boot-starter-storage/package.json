@@ -61,5 +61,9 @@
     "cos",
     "file-upload",
     "typescript"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  }
 }
