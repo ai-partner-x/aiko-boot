@@ -56,6 +56,12 @@ jobs:
           persist-credentials: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Configure git author (required by opencode)
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git config --local --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Merge PR
         if: steps.check_merge.outputs.should_merge == 'true'
         uses: actions/github-script@v7
