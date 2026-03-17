@@ -123,9 +123,15 @@ const UserDropdown = () => {
   const navigate = useNavigate()
 
   const handleLogout = async () => {
-    const result = await appAuth.logout()
-    if (result?.success) {
-      navigate(LOGIN_URL, { replace: true })
+    try {
+      const result = await appAuth.logout()
+      if (result?.success) {
+        navigate(LOGIN_URL, { replace: true })
+      } else {
+        console.error("[Header] Logout failed without success flag.")
+      }
+    } catch (error) {
+      console.error("[Header] Logout error:", error)
     }
   }
 

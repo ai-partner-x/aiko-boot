@@ -23,6 +23,14 @@ function toAuthUser(info: {
   }
 }
 
+function logAuthError(context: string, error: unknown): string {
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error"
+  // Centralized auth error logging for easier debugging.
+  console.error(`[Auth] ${context} error:`, error)
+  return message
+}
+
 export function createBackendAuthProvider(apiBaseUrl: string): AuthProviderConfig {
   const authApi = new AuthApi(apiBaseUrl)
 
@@ -42,7 +50,7 @@ export function createBackendAuthProvider(apiBaseUrl: string): AuthProviderConfi
           redirectTo: "/",
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Login failed"
+        const message = logAuthError("login", err) || "Login failed"
         return {
           success: false,
           error: { name: "Login Error", message },
@@ -61,13 +69,15 @@ export function createBackendAuthProvider(apiBaseUrl: string): AuthProviderConfi
       try {
         const result = await authApi.getCurrentUser(token, {}, "")
         return toAuthUser(result)
-      } catch {
+      } catch (err) {
+        logAuthError("getIdentity", err)
         localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY)
         return null
       }
     },
 
     onError: async (error: Error & { statusCode?: number }) => {
+      logAuthError("onError", error)
       const status = error.statusCode
       if (status === 401 || status === 403) {
         localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY)

@@ -105,9 +105,11 @@ function AppShell() {
   }
 
   const router = createBrowserRouter(appRoutes)
-  setAppAuthorizationConfig({
-    fallbackUrl: '/not-found',
-  })
+  useEffect(() => {
+    setAppAuthorizationConfig({
+      fallbackUrl: "/not-found",
+    })
+  }, [])
   return (
     <ThemeProvider>
       <AppConfigProvider
