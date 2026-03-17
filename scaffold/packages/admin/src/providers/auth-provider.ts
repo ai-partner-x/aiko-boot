@@ -1,24 +1,25 @@
 import type { AuthProviderConfig, AuthUser, LoginParams } from "@scaffold/core"
+import { AUTH_ACCESS_TOKEN_KEY } from "@scaffold/core"
 import { AuthApi } from "@scaffold/api/client"
+import { LOGIN_URL } from "@/app.config"
 
-const ACCESS_TOKEN_KEY = "_access_token"
-
-/** Map backend userInfo to core AuthUser. */
+/** Map backend userInfo to core AuthUser. Handles missing/optional fields safely. */
 function toAuthUser(info: {
-  id: number
-  username: string
-  realName?: string
-  email?: string
-  roles?: string[]
-  permissions?: string[]
+  id?: number | null
+  username?: string | null
+  realName?: string | null
+  email?: string | null
+  roles?: string[] | null
+  permissions?: string[] | null
 }): AuthUser {
+  const account = info.username ?? ""
   return {
-    id: String(info.id),
-    account: info.username,
-    email: info.email,
-    realName: info.realName,
-    roles: info.roles,
-    permissions: info.permissions,
+    ...(info.id != null && { id: String(info.id) }),
+    account,
+    ...(info.email != null && info.email !== "" && { email: info.email }),
+    ...(info.realName != null && { realName: info.realName }),
+    ...(info.roles != null && info.roles.length > 0 && { roles: info.roles }),
+    ...(info.permissions != null && info.permissions.length > 0 && { permissions: info.permissions }),
   }
 }
 
@@ -33,7 +34,7 @@ export function createBackendAuthProvider(apiBaseUrl: string): AuthProviderConfi
           password: params.password ?? "",
         })
         if (result.accessToken) {
-          localStorage.setItem(ACCESS_TOKEN_KEY, result.accessToken)
+          localStorage.setItem(AUTH_ACCESS_TOKEN_KEY, result.accessToken)
         }
         return {
           success: true,
@@ -50,15 +51,28 @@ export function createBackendAuthProvider(apiBaseUrl: string): AuthProviderConfi
     },
 
     logout: async () => {
-      localStorage.removeItem(ACCESS_TOKEN_KEY)
+      localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY)
       return { success: true }
     },
 
     getIdentity: async (): Promise<AuthUser | null> => {
-      const token = localStorage.getItem(ACCESS_TOKEN_KEY)
+      const token = localStorage.getItem(AUTH_ACCESS_TOKEN_KEY)
       if (!token) return null
-      const result = await authApi.getCurrentUser(token, {}, '')
-      return toAuthUser(result)
+      try {
+        const result = await authApi.getCurrentUser(token, {}, "")
+        return toAuthUser(result)
+      } catch {
+        localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY)
+        return null
+      }
+    },
+
+    onError: async (error: Error & { statusCode?: number }) => {
+      const status = error.statusCode
+      if (status === 401 || status === 403) {
+        localStorage.removeItem(AUTH_ACCESS_TOKEN_KEY)
+        return { logout: true, redirectTo: LOGIN_URL }
+      }
     },
   }
 }

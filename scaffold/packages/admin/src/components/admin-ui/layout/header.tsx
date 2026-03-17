@@ -1,5 +1,5 @@
 import { useAppConfig } from "@/providers/app-config"
-// import { useNavigate } from "react-router"
+import { useNavigate } from "react-router"
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -14,6 +14,7 @@ import { LogOutIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 import { appAuth } from "@scaffold/core"
+import { LOGIN_URL } from "@/app.config"
 
 export const Header = () => {
   const { isMobile } = useSidebar()
@@ -119,9 +120,13 @@ function MobileHeader() {
 
 const UserDropdown = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
-    await appAuth.logout()
+    const result = await appAuth.logout()
+    if (result?.success) {
+      navigate(LOGIN_URL, { replace: true })
+    }
   }
 
   return (
