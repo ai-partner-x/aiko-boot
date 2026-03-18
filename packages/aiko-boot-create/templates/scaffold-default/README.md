@@ -39,8 +39,6 @@ curl -X POST http://localhost:3001/api/auth/login \
 │   ├── core         # 通用能力（鉴权 appAuth、defaultAuthProvider、路由中间件等）
 │   ├── admin        # 管理端（Vite + React，鉴权由 @scaffold/core 提供）
 │   └── mobile       # 移动端 H5（Vite + React，鉴权由 @scaffold/core 提供）
-├── docs/
-│   └── auth-shared-design.md       # Auth 设计说明（@scaffold/core）
 └── package.json
 ```
 
@@ -57,7 +55,7 @@ pnpm init-db    # 首次
 pnpm dev        # 并行启动 api + admin + mobile
 ```
 
-**测试登录**：mobile / admin 使用 **@scaffold/core** 的 `appAuth` + `defaultAuthProvider`，当前为本地演示（localStorage）；接入真实 API 时替换为自定义 AuthProviderConfig，详见 [Auth 设计](docs/auth-shared-design.md)。
+**测试登录**：mobile / admin 使用 **@scaffold/core** 的 `appAuth` + `defaultAuthProvider`，当前为本地演示（localStorage）；接入真实 API 时替换为自定义 AuthProviderConfig（脚手架不再生成 docs 站点，相关设计请参考框架文档或 `packages/core` 源码）。
 
 ## 前置
 
