@@ -19,7 +19,9 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "sync:templates:scaffold-default": "node ./scripts/sync-scaffold-default.mjs",
+    "sync:templates:scaffold-default:dry": "node ./scripts/sync-scaffold-default.mjs --dry-run"
   },
   "dependencies": {
     "commander": "^12.1.0",
@@ -34,7 +36,7 @@
     "node": ">=18.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "registry": "https://registry.npmjs.org",
     "access": "public"
   }
 }
