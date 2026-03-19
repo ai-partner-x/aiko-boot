@@ -12,7 +12,7 @@
 
 - `@ai-partner-x/aiko-boot-starter-log`
 
-> 若你使用 `aiko-boot-create add-feature --feature log`，会自动完成依赖写入。
+> 若你使用 `aiko-boot add-feature --feature log`，会自动完成依赖写入。
 
 ## 2. 配置 `app.config.ts`
 

@@ -1,12 +1,12 @@
 {
-  "name": "@ai-partner-x/aiko-boot-create",
+  "name": "@ai-partner-x/aiko-boot-cli",
   "version": "0.1.3",
   "description": "CLI to create aiko-boot scaffold project (monorepo with api, admin, mobile, shared)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "aiko-boot-create": "./dist/cli.js"
+    "aiko-boot": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -15,7 +15,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "templates"
   ],
   "scripts": {
     "build": "tsc",

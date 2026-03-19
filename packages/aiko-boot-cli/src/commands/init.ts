@@ -4,13 +4,13 @@ import { createCliLogger } from '../core/logger.js';
 import { createPrompter } from '../core/prompts.js';
 
 /**
- * init 命令：创建新的脚手架 monorepo。
+ * create 命令：创建新的脚手架 monorepo。
  *
  * 仅搭建参数和调用用例层的骨架，实际业务逻辑在 usecase 中实现。
  */
-export function registerInitCommand(program: Command): void {
+export function registerCreateCommand(program: Command): void {
   program
-    .command('init')
+    .command('create')
     .argument('[targetDir]', '目标目录（默认：当前目录下以项目名命名的文件夹）')
     .option('-n, --name <name>', '项目名 / scope，例如 my-app')
     .option('--empty', '仅创建空的 monorepo 结构，不包含 admin/mobile/api')
@@ -19,7 +19,7 @@ export function registerInitCommand(program: Command): void {
     .option('--with-api', '在初始化时创建 api 服务端')
     .option('--template-dir <dir>', '模板目录（默认：<cwd>/scaffold）')
     .option('--dry-run', '仅显示将要执行的操作，不实际写入文件')
-    .description('初始化一个新的 aiko-boot 脚手架 monorepo')
+    .description('创建一个新的 aiko-boot 脚手架 monorepo')
     .action(async (targetDir: string | undefined, options: any) => {
       const logger = createCliLogger();
       const prompter = createPrompter();

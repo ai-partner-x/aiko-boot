@@ -34,7 +34,7 @@ export function createAddApiUseCase(deps: AddApiDeps) {
     const config = await loadProjectConfig(rootDir);
     if (!config) {
       throw new Error(
-        '未找到 .aiko-boot.json，当前目录似乎不是脚手架根目录，请在 init 生成的根目录下执行。',
+        '未找到 .aiko-boot.json，当前目录似乎不是脚手架根目录，请在 create 生成的根目录下执行。',
       );
     }
 

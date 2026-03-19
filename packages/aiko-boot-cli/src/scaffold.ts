@@ -25,22 +25,9 @@ const SKIP_WHEN_BARE = [
 ];
 
 const FRAMEWORK_SCOPE = '@ai-partner-x/';
-/** Registry version for @ai-partner-x/*，发布到中央仓库后从此版本安装；本地开发通过 pnpm.overrides 覆盖 */
-const FRAMEWORK_REGISTRY_VERSION = '^0.1.0';
-
-/** 脚手架中可能用到的框架包名（scope 后缀），用于生成 overrides */
-const FRAMEWORK_PACKAGE_NAMES = [
-  'aiko-boot',
-  'aiko-boot-codegen',
-  'aiko-boot-starter-cache',
-  'aiko-boot-starter-orm',
-  'aiko-boot-starter-validation',
-  'aiko-boot-starter-web',
-  'aiko-boot-starter-storage',
-  'aiko-boot-starter-security',
-  'aiko-boot-starter-mq',
-  'aiko-boot-starter-log',
-] as const;
+/** Registry version range for @ai-partner-x/* so quickly published versions stay compatible. */
+const FRAMEWORK_REGISTRY_VERSION =
+  process.env.AI_PARTNER_FRAMEWORK_VERSION ?? '^0.1.3';
 
 export type CreateOptions = {
   templateDir: string;
@@ -73,13 +60,6 @@ export async function createScaffold(options: CreateOptions): Promise<void> {
   // 依赖写 registry 版本，便于将来从中央仓库安装；本地开发通过根目录 pnpm.overrides 覆盖
   await replaceFrameworkDepsWithRegistryVersion(targetDir);
 
-  // 尝试自动探测本地框架根目录（用于 monorepo 开发模式下生成 pnpm.overrides）。
-  // 若未探测到（例如在用户项目中全局安装 CLI），则跳过覆盖，直接使用 registry 版本。
-  const frameworkRoot = await detectFrameworkRoot(templateDir);
-  if (frameworkRoot) {
-    await addFrameworkOverridesInRoot(targetDir, frameworkRoot);
-  }
-
   // 使生成的项目成为独立 pnpm workspace，在项目目录内执行 pnpm 时不会回溯到父仓库
   await fs.writeFile(
     path.join(targetDir, 'pnpm-workspace.yaml'),
@@ -90,7 +70,7 @@ export async function createScaffold(options: CreateOptions): Promise<void> {
   );
 
   if (!withBaseSystem) {
-    await writeBareTemplates(targetDir, scope);
+    await writeBareTemplates(targetDir);
   }
 
   // 再次替换，确保子包中 @ai-partner-x/* 均为 registry 版本（与根 pnpm.overrides 配合）
@@ -129,21 +109,6 @@ async function replaceFrameworkDepsWithRegistryVersion(targetDir: string): Promi
     }
     if (changed) await fs.writeJson(pkgPath, pkg, { spaces: 2 });
   }
-}
-
-/** 在根 package.json 中增加 pnpm.overrides，指向本地框架路径；需要从中央仓库安装时删除该段即可 */
-async function addFrameworkOverridesInRoot(targetDir: string, frameworkRoot: string): Promise<void> {
-  const rootPkgPath = path.join(targetDir, 'package.json');
-  const rootPkg = await fs.readJson(rootPkgPath);
-  const relativeToFramework = path.relative(targetDir, frameworkRoot).replace(/\\/g, '/');
-  const filePrefix = relativeToFramework.startsWith('.') ? relativeToFramework : `./${relativeToFramework}`;
-
-  const overrides: Record<string, string> = {};
-  for (const pkgName of FRAMEWORK_PACKAGE_NAMES) {
-    overrides[`${FRAMEWORK_SCOPE}${pkgName}`] = `file:${filePrefix}/packages/${pkgName}`;
-  }
-  rootPkg.pnpm = { ...rootPkg.pnpm, overrides };
-  await fs.writeJson(rootPkgPath, rootPkg, { spaces: 2 });
 }
 
 function shouldIgnore(name: string): boolean {
@@ -202,34 +167,8 @@ async function replaceScopeInFiles(dir: string, scope: string): Promise<void> {
   }
 }
 
-/**
- * 尝试从模板目录向上查找本地框架根目录：
- * - 典型场景：在 ai-first-framework monorepo 内开发，模板位于 packages/aiko-boot-create/templates/scaffold-default
- * - 我们需要找到包含 packages/aiko-boot 的目录，以便为生成项目写入本地 file: overrides
- * 若未找到（例如用户全局安装 CLI），则返回 null。
- */
-async function detectFrameworkRoot(templateDir: string): Promise<string | null> {
-  let current = path.resolve(templateDir);
-
-  // 最多向上查找 6 层，防止死循环
-  for (let i = 0; i < 6; i += 1) {
-    const parent = path.dirname(current);
-    if (parent === current) break;
-
-    const candidate = parent;
-    const aikoBootPath = path.join(candidate, 'packages', 'aiko-boot');
-    if (await fs.pathExists(aikoBootPath)) {
-      return candidate;
-    }
-
-    current = parent;
-  }
-
-  return null;
-}
-
 /** Write bare (no auth) template files when withBaseSystem is false. */
-async function writeBareTemplates(targetDir: string, scope: string): Promise<void> {
+async function writeBareTemplates(targetDir: string): Promise<void> {
   const packagesDir = path.join(targetDir, 'packages');
 
   // api init-db

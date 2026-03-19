@@ -31,5 +31,5 @@ const logger = getLogger('server');
 logger.info('Starting...');
 ```
 
-> 脚手架推荐直接使用 `aiko-boot-create add-feature --feature log` 自动注入配置与中间件。
+> 脚手架推荐直接使用 `aiko-boot add-feature --feature log` 自动注入配置与中间件。
 

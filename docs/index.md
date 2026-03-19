@@ -8,14 +8,14 @@ hero:
   tagline: Spring Boot Style · TypeScript · ORM · AI-Friendly
   actions:
     - theme: brand
+      text: 快速开始（脚手架）
+      link: /guide/cli/aiko-boot-cli
+    - theme: alt
       text: 插件开发指南
       link: /core/plugin-guide
     - theme: alt
       text: 文件存储 Starter
       link: /starters/storage
-    - theme: alt
-      text: Git 工作流
-      link: /engineering/git-workflow
 
 features:
   - title: AI Native
@@ -28,6 +28,8 @@ features:
 
 ## 文档索引
 
+- **快速开始**
+  - [`aiko-boot` 脚手架 CLI（create / add-* / 运行时配置）](/guide/cli/aiko-boot-cli)
 - **核心指南**
   - [核心能力与插件开发指南](/core/plugin-guide)
 - **开发指南**
@@ -35,8 +37,6 @@ features:
   - [缓存开发](/guide/cache-development)
 - **代码生成**
   - [Codegen 指南](/guide/codegen)
-- **命令行工具**
-  - [`aiko-boot-create` 脚手架 CLI](/guide/cli/aiko-boot-create)
 - **Starter**
   - [文件存储 Starter](/starters/storage)
   - [消息队列 Starter](/starters/mq)

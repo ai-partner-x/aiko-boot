@@ -7,18 +7,10 @@ import {
 } from './project-config.js';
 
 const FRAMEWORK_SCOPE = '@ai-partner-x/';
-const FRAMEWORK_PACKAGE_NAMES = [
-  'aiko-boot',
-  'aiko-boot-codegen',
-  'aiko-boot-starter-cache',
-  'aiko-boot-starter-orm',
-  'aiko-boot-starter-validation',
-  'aiko-boot-starter-web',
-  'aiko-boot-starter-storage',
-  'aiko-boot-starter-security',
-  'aiko-boot-starter-mq',
-  'aiko-boot-starter-log',
-] as const;
+// Use a semver range so newly published framework patch/minor versions are compatible.
+// You can override for testing by setting `AI_PARTNER_FRAMEWORK_VERSION`.
+const FRAMEWORK_REGISTRY_VERSION =
+  process.env.AI_PARTNER_FRAMEWORK_VERSION ?? '^0.1.3';
 
 export async function ensurePnpmWorkspace(rootDir: string): Promise<void> {
   const workspacePath = path.join(rootDir, 'pnpm-workspace.yaml');
@@ -116,52 +108,72 @@ export async function syncRootPackageJson(rootDir: string): Promise<void> {
     pnpmConfig.onlyBuiltDependencies = ['better-sqlite3'];
   }
 
-  // 在 monorepo 模式下自动写入本地框架的 pnpm.overrides，解决 workspace:* 找不到的问题
-  if (!pnpmConfig.overrides) {
-    const frameworkRoot = await detectFrameworkRootFromProject(rootDir);
-    if (frameworkRoot) {
-      const relativeToFramework = path
-        .relative(rootDir, frameworkRoot)
-        .replace(/\\/g, '/');
-      const filePrefix = relativeToFramework.startsWith('.')
-        ? relativeToFramework
-        : `./${relativeToFramework}`;
-
-      const overrides: Record<string, string> = {};
-      for (const pkgName of FRAMEWORK_PACKAGE_NAMES) {
-        overrides[`${FRAMEWORK_SCOPE}${pkgName}`] = `file:${filePrefix}/packages/${pkgName}`;
+  // 清理旧的本地框架覆盖（如 file:.../packages/），避免在中央仓库安装时仍引用本地库。
+  if (pnpmConfig.overrides && typeof pnpmConfig.overrides === 'object') {
+    for (const [k, v] of Object.entries(pnpmConfig.overrides)) {
+      if (k.startsWith(FRAMEWORK_SCOPE) && typeof v === 'string' && v.startsWith('file:')) {
+        delete (pnpmConfig.overrides as any)[k];
       }
-      pnpmConfig.overrides = overrides;
+    }
+    if (Object.keys(pnpmConfig.overrides).length === 0) {
+      delete (pkg.pnpm as any).overrides;
     }
   }
 
   pkg.pnpm = pnpmConfig;
 
+  // Ensure all generated framework deps use registry versions (not `workspace:*`),
+  // so the scaffold can be used outside of this monorepo.
+  await replaceFrameworkDepsWithRegistryVersion(rootDir);
+
   await fs.writeJson(rootPkgPath, pkg, { spaces: 2 });
 }
 
-/**
- * 从生成项目目录向上查找包含 packages/aiko-boot 的本地框架根目录。
- * 用于在本仓库 monorepo 内开发时自动生成 pnpm.overrides。
- */
-async function detectFrameworkRootFromProject(
-  projectRoot: string,
-): Promise<string | null> {
-  let current = path.resolve(projectRoot);
+async function replaceFrameworkDepsWithRegistryVersion(
+  rootDir: string,
+): Promise<void> {
+  const packageJsonPaths: string[] = [];
 
-  // 最多向上查找 6 层，防止死循环
-  for (let i = 0; i < 6; i += 1) {
-    const parent = path.dirname(current);
-    if (parent === current) break;
-
-    const candidate = parent;
-    const aikoBootPath = path.join(candidate, 'packages', 'aiko-boot');
-    if (await fs.pathExists(aikoBootPath)) {
-      return candidate;
+  async function collect(dir: string): Promise<void> {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const full = path.join(dir, e.name);
+      if (e.name === 'node_modules') continue;
+      if (e.isDirectory()) {
+        if (e.name.startsWith('.')) continue;
+        await collect(full);
+      } else if (e.isFile() && e.name === 'package.json') {
+        packageJsonPaths.push(full);
+      }
     }
-
-    current = parent;
   }
 
-  return null;
+  await collect(path.join(rootDir, 'packages'));
+
+  for (const pkgPath of packageJsonPaths) {
+    const pkg = await fs.readJson(pkgPath);
+    let changed = false;
+
+    for (const key of ['dependencies', 'devDependencies'] as const) {
+      if (!pkg[key]) continue;
+      for (const [name, value] of Object.entries(pkg[key] as Record<
+        string,
+        unknown
+      >)) {
+        const isWorkspaceProtocol =
+          typeof value === 'string' &&
+          (value === 'workspace:*' || value.startsWith('workspace:'));
+
+        if (name.startsWith(FRAMEWORK_SCOPE) && isWorkspaceProtocol) {
+          (pkg[key] as Record<string, string>)[name] =
+            FRAMEWORK_REGISTRY_VERSION;
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) {
+      await fs.writeJson(pkgPath, pkg, { spaces: 2 });
+    }
+  }
 }
