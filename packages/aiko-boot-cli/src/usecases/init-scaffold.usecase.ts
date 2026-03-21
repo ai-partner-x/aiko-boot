@@ -156,7 +156,10 @@ export function createInitUseCase(deps: InitScaffoldDeps) {
         logger.info('正在添加 API 服务端...');
         await addApiUseCase.execute({
           name: 'api',
+          preset: 'plain',
           db: 'sqlite',
+          yes: true,
+          interactive: false,
           rootDir: targetDir,
           templateDir: undefined, // 使用 add-api 的默认内置模板 api-base
           dryRun: false,

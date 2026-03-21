@@ -21,10 +21,13 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "sync:templates:api-base": "node ./scripts/sync-api-base.mjs",
+    "sync:templates:api-base:dry": "node ./scripts/sync-api-base.mjs --dry-run",
     "sync:templates:scaffold-default": "node ./scripts/sync-scaffold-default.mjs",
     "sync:templates:scaffold-default:dry": "node ./scripts/sync-scaffold-default.mjs --dry-run"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.3.2",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0"
   },

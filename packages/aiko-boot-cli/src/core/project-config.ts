@@ -11,6 +11,7 @@ export type AikoApiConfig = {
   name: string;
   path: string;
   db: string;
+  preset?: 'plain' | 'system' | string;
   features?: string[];
 };
 

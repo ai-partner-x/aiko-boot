@@ -198,12 +198,6 @@ async function addFileFeatureToApi(ctx: AddFileFeatureContext): Promise<void> {
     let serverCode = await fs.readFile(serverPath, 'utf-8');
 
     if (!serverCode.includes('hasFileUpload')) {
-      // import { dirname } from 'path'; => import { dirname, join } from 'path';
-      serverCode = serverCode.replace(
-        "import { dirname } from 'path';",
-        "import { dirname, join } from 'path';",
-      );
-
       if (!serverCode.includes("from 'multer'")) {
         serverCode = serverCode.replace(
           "import express from 'express';",
@@ -211,32 +205,31 @@ async function addFileFeatureToApi(ctx: AddFileFeatureContext): Promise<void> {
         );
       }
 
-      const loggerBlock = `  logger.info('Express middleware configured', {
-    hasRequestLogging: true,
-  });
-`;
-      const replacementBlock = `  // 配置 multer 文件上传中间件
-  const upload = multer({ storage: multer.memoryStorage() });
-  expressApp.post('/api/upload', upload.single('file'));
-  expressApp.post('/api/upload/multiple', upload.array('files', 10));
+      const middlewareAnchor = 'expressApp.use(express.json());';
+      const uploadBlock = `expressApp.use(express.json());
 
-  // 配置静态文件服务（本地存储时访问上传的文件）
-  const uploadsDir = join(__dirname, '..', 'uploads');
-  expressApp.use('/api/uploads', express.static(uploadsDir));
+// 配置 multer 文件上传中间件
+const upload = multer({ storage: multer.memoryStorage() });
+expressApp.post('/api/upload', upload.single('file'));
+expressApp.post('/api/upload/multiple', upload.array('files', 10));
 
-  logger.info('Express middleware configured', {
-    hasRequestLogging: true,
-    hasFileUpload: true,
-    hasStaticFiles: true,
-  });
-`;
+// 配置静态文件服务（本地存储时访问上传的文件）
+const uploadsDir = join(projectDir, 'uploads');
+expressApp.use('/api/uploads', express.static(uploadsDir));
 
-      if (!serverCode.includes(loggerBlock)) {
+logger.info('Express middleware configured', {
+  hasRequestLogging: true,
+  hasFileUpload: true,
+  hasStaticFiles: true,
+});`;
+
+      if (serverCode.includes(middlewareAnchor)) {
+        serverCode = serverCode.replace(middlewareAnchor, uploadBlock);
+      } else {
         throw new Error(
-          '无法在 server.ts 中找到 Express 中间件配置位置，请手动合并文件上传逻辑。',
+          '无法在 server.ts 中找到 expressApp.use(express.json()) 注入点，请手动合并文件上传逻辑。',
         );
       }
-      serverCode = serverCode.replace(loggerBlock, replacementBlock);
       await fs.writeFile(serverPath, serverCode, 'utf-8');
       logger.info('已在 server.ts 中配置 multer 中间件和静态文件服务。');
     } else {

@@ -10,7 +10,11 @@ export function registerAddApiCommand(program: Command): void {
   program
     .command('add-api')
     .argument('[name]', '服务端名称，例如 api、user-api')
-    .option('--db <db>', '数据库类型（预留：sqlite | postgres | mysql 等）', 'sqlite')
+    .option('--db <db>', '数据库类型：sqlite | postgres | mysql')
+    .option('--preset <preset>', '服务端预设：plain | system')
+    .option('--features <items>', '要启用的组件，逗号分隔：mq,file,redis,log')
+    .option('--yes', '非交互模式：缺省值直接使用默认值')
+    .option('--interactive', '强制交互模式（即使已检测到非 TTY）')
     .option('--root <dir>', '脚手架根目录（默认：当前工作目录）')
     .option(
       '--template-dir <dir>',
@@ -27,6 +31,10 @@ export function registerAddApiCommand(program: Command): void {
         await usecase.execute({
           name,
           db: options.db,
+          preset: options.preset,
+          features: options.features,
+          yes: !!options.yes,
+          interactive: !!options.interactive,
           rootDir: options.root,
           templateDir: options.templateDir,
           dryRun: !!options.dryRun,
