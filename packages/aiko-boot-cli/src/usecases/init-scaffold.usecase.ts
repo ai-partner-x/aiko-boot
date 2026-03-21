@@ -1,5 +1,4 @@
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
 import type { Logger } from '../core/logger.js';
 import type { Prompter } from '../core/prompts.js';
@@ -14,11 +13,10 @@ import { createAddAppUseCase } from './add-app.usecase.js';
 export type InitScaffoldInput = {
   targetDir?: string;
   name?: string;
+  withAdminSuite: boolean;
+  db?: string;
+  features?: string;
   empty: boolean;
-  withAdmin: boolean;
-  withMobile: boolean;
-  withApi: boolean;
-  templateDir?: string;
   dryRun: boolean;
 };
 
@@ -27,18 +25,13 @@ export type InitScaffoldDeps = {
   prompter: Prompter;
 };
 
-// 在 ESM 环境中模拟 __dirname，兼容打包到 dist 后的运行时
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 export function createInitUseCase(deps: InitScaffoldDeps) {
   const { logger, prompter } = deps;
 
   async function resolveInput(input: InitScaffoldInput): Promise<{
     targetDir: string;
     name: string;
-    templateDir: string;
-    options: Omit<InitScaffoldInput, 'targetDir' | 'name' | 'templateDir'>;
+    options: Omit<InitScaffoldInput, 'targetDir' | 'name'>;
   }> {
     const cwd = process.cwd();
     let name = input.name;
@@ -64,38 +57,28 @@ export function createInitUseCase(deps: InitScaffoldDeps) {
     const resolvedName = name!;
     const resolvedTargetDir = targetDir!;
 
-    // 默认使用包内置模板：templates/scaffold-default
-    // 这样发布到 npm 后也可以直接使用，而无需依赖仓库根目录的 ./scaffold。
-    const defaultTemplateDir = path.resolve(
-      __dirname,
-      '../../templates/scaffold-default',
-    );
-    const templateDir = input.templateDir ?? defaultTemplateDir;
-
     return {
       targetDir: resolvedTargetDir,
       name: resolvedName,
-      templateDir,
       options: {
+        withAdminSuite: input.withAdminSuite,
+        db: input.db,
+        features: input.features,
         empty: input.empty,
-        withAdmin: input.withAdmin,
-        withMobile: input.withMobile,
-        withApi: input.withApi,
         dryRun: input.dryRun,
       },
     };
   }
 
   async function execute(input: InitScaffoldInput): Promise<void> {
-    const { targetDir, name, templateDir, options } = await resolveInput(input);
+    const { targetDir, name, options } = await resolveInput(input);
 
     if (options.dryRun) {
       logger.info('[dry-run] 将会创建脚手架：');
       logger.info(`  name: ${name}`);
       logger.info(`  targetDir: ${targetDir}`);
-      logger.info(`  templateDir: ${templateDir}`);
       logger.info(
-        `  empty: ${options.empty}, withAdmin: ${options.withAdmin}, withMobile: ${options.withMobile}, withApi: ${options.withApi}`,
+        `  empty: ${options.empty}, withAdminSuite: ${options.withAdminSuite}, db: ${options.db ?? '(default)'}, features: ${options.features ?? '(none)'}`,
       );
       return;
     }
@@ -144,49 +127,44 @@ export function createInitUseCase(deps: InitScaffoldDeps) {
     };
     await saveProjectConfig(targetDir, config);
 
-    // 步骤 3: 如果指定了 --with-api/--with-admin/--with-mobile，复用 add-api/add-app 的逻辑
-    if (!options.empty) {
+    if (options.empty && options.withAdminSuite) {
+      throw new Error('--empty 和 --with-admin-suite 不能同时使用。');
+    }
+
+    // 步骤 3: with-admin-suite 时复用 add-api/add-app 逻辑，自动创建 admin+mobile+system(api)
+    if (options.withAdminSuite) {
       const addApiUseCase = createAddApiUseCase({ logger, prompter });
       const addAppUseCase = createAddAppUseCase({ logger, prompter });
 
-      // 默认模板目录：使用内置的 scaffold-default（如果用户没指定）
-      const defaultTemplateRoot = templateDir;
+      logger.info('正在添加 System API 服务端...');
+      const shouldPromptApiOptions =
+        options.db === undefined || options.features === undefined;
+      await addApiUseCase.execute({
+        name: 'system',
+        preset: 'system',
+        db: options.db,
+        features: options.features,
+        yes: false,
+        interactive: shouldPromptApiOptions,
+        rootDir: targetDir,
+        dryRun: false,
+      });
 
-      if (options.withApi) {
-        logger.info('正在添加 API 服务端...');
-        await addApiUseCase.execute({
-          name: 'api',
-          preset: 'plain',
-          db: 'sqlite',
-          yes: true,
-          interactive: false,
-          rootDir: targetDir,
-          templateDir: undefined, // 使用 add-api 的默认内置模板 api-base
-          dryRun: false,
-        });
-      }
+      logger.info('正在添加 Admin 应用...');
+      await addAppUseCase.execute({
+        name: 'admin',
+        type: 'admin',
+        rootDir: targetDir,
+        dryRun: false,
+      });
 
-      if (options.withAdmin) {
-        logger.info('正在添加 Admin 应用...');
-        await addAppUseCase.execute({
-          name: 'admin',
-          type: 'admin',
-          rootDir: targetDir,
-          templateDir: defaultTemplateRoot, // 从 scaffold-default/packages/admin 复制
-          dryRun: false,
-        });
-      }
-
-      if (options.withMobile) {
-        logger.info('正在添加 Mobile 应用...');
-        await addAppUseCase.execute({
-          name: 'mobile',
-          type: 'mobile',
-          rootDir: targetDir,
-          templateDir: defaultTemplateRoot, // 从 scaffold-default/packages/mobile 复制
-          dryRun: false,
-        });
-      }
+      logger.info('正在添加 Mobile 应用...');
+      await addAppUseCase.execute({
+        name: 'mobile',
+        type: 'mobile',
+        rootDir: targetDir,
+        dryRun: false,
+      });
     }
 
     // 最后统一同步根 package.json（scripts / pnpm.onlyBuiltDependencies 等）

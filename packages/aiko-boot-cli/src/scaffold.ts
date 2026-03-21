@@ -40,7 +40,7 @@ export async function createScaffold(options: CreateOptions): Promise<void> {
   if (!(await fs.pathExists(templateDir))) {
     throw new Error(
       `Template directory not found: ${templateDir}. ` +
-        'You can specify a custom template with --template-dir, or use the built-in templates.',
+        'Please ensure scaffold-default templates are synced and available.',
     );
   }
 

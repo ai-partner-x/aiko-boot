@@ -16,10 +16,6 @@ export function registerAddApiCommand(program: Command): void {
     .option('--yes', '非交互模式：缺省值直接使用默认值')
     .option('--interactive', '强制交互模式（即使已检测到非 TTY）')
     .option('--root <dir>', '脚手架根目录（默认：当前工作目录）')
-    .option(
-      '--template-dir <dir>',
-      '模板根目录（开发阶段通常为 ai-first-framework/scaffold）',
-    )
     .option('--dry-run', '仅显示将要执行的操作，不实际写入文件')
     .description('在现有脚手架中新增服务端工程（自动包含数据库初始化逻辑）')
     .action(async (name: string | undefined, options: any) => {
@@ -36,7 +32,6 @@ export function registerAddApiCommand(program: Command): void {
           yes: !!options.yes,
           interactive: !!options.interactive,
           rootDir: options.root,
-          templateDir: options.templateDir,
           dryRun: !!options.dryRun,
         });
       } catch (err) {

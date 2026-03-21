@@ -410,9 +410,14 @@ async function addMqFeatureToApi(ctx: AddMqFeatureContext): Promise<void> {
   if (!pkg.dependencies['@ai-partner-x/aiko-boot-starter-mq']) {
     pkg.dependencies['@ai-partner-x/aiko-boot-starter-mq'] = 'workspace:*';
   }
+  // aiko-boot/di 当前会静态导出 React 集成，未安装 react 时在某些 starter 加载阶段会报错。
+  // 这里补齐最小运行时依赖，避免新建 API 后直接启动失败。
+  if (!pkg.dependencies.react) {
+    pkg.dependencies.react = '^18.2.0';
+  }
 
   await fs.writeJson(pkgPath, pkg, { spaces: 2 });
-  logger.info('更新依赖：已写入 aiko-boot-starter-mq。');
+  logger.info('更新依赖：已写入 aiko-boot-starter-mq / react。');
 
   // 2) 更新 app.config.ts，增加 mq 配置（如果尚未存在）
   const appConfigPath = path.join(apiDir, 'app.config.ts');

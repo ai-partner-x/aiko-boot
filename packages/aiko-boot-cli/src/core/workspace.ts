@@ -92,14 +92,21 @@ export async function syncRootPackageJson(rootDir: string): Promise<void> {
     scripts['dev:prod'] = `pnpm -r --parallel ${toPnpmFilterArgs(allRunPkgs)} dev:prod`;
   }
 
-  // API 相关脚本：只针对 name === 'api' 的服务，保持与 scaffold 模板一致
-  const api = (config.apis ?? []).find((x) => x.name === 'api');
-  if (api) {
-    const apiPkgName = `@${scope}/${api.name}`;
+  // API 相关脚本：
+  // - dev/build/start:api 仍绑定到一个“主服务”（优先 api，再 system，再第一个）
+  // - init-db 聚合执行所有 API 服务的 init-db
+  const preferredApi =
+    (config.apis ?? []).find((x) => x.name === 'api') ??
+    (config.apis ?? []).find((x) => x.name === 'system') ??
+    (config.apis ?? [])[0];
+  if (preferredApi) {
+    const apiPkgName = `@${scope}/${preferredApi.name}`;
     scripts['dev:api'] = `pnpm -F ${apiPkgName} dev`;
     scripts['build:api'] = `pnpm -F ${apiPkgName} build`;
     scripts['start:api'] = `pnpm -F ${apiPkgName} start`;
-    scripts['init-db'] = `pnpm -F ${apiPkgName} init-db`;
+  }
+  if (apiPkgs.length > 0) {
+    scripts['init-db'] = `pnpm -r ${toPnpmFilterArgs(apiPkgs)} init-db`;
   }
 
   // Admin / Mobile 应用脚本：按照 type 分类

@@ -13,11 +13,10 @@ export function registerCreateCommand(program: Command): void {
     .command('create')
     .argument('[targetDir]', '目标目录（默认：当前目录下以项目名命名的文件夹）')
     .option('-n, --name <name>', '项目名 / scope，例如 my-app')
-    .option('--empty', '仅创建空的 monorepo 结构，不包含 admin/mobile/api')
-    .option('--with-admin', '在初始化时创建 admin 应用')
-    .option('--with-mobile', '在初始化时创建 mobile 应用')
-    .option('--with-api', '在初始化时创建 api 服务端')
-    .option('--template-dir <dir>', '模板目录（默认：<cwd>/scaffold）')
+    .option('--with-admin-suite', '创建 admin + mobile + system(api) 套件')
+    .option('--db <db>', 'with-admin-suite 时的数据库类型：sqlite | postgres | mysql')
+    .option('--features <items>', 'with-admin-suite 时启用的组件，逗号分隔：mq,file,redis,log')
+    .option('--empty', '仅创建空的 monorepo 结构')
     .option('--dry-run', '仅显示将要执行的操作，不实际写入文件')
     .description('创建一个新的 aiko-boot 脚手架 monorepo')
     .action(async (targetDir: string | undefined, options: any) => {
@@ -29,11 +28,10 @@ export function registerCreateCommand(program: Command): void {
         await usecase.execute({
           targetDir,
           name: options.name,
+          withAdminSuite: !!options.withAdminSuite,
+          db: options.db,
+          features: options.features,
           empty: !!options.empty,
-          withAdmin: !!options.withAdmin,
-          withMobile: !!options.withMobile,
-          withApi: !!options.withApi,
-          templateDir: options.templateDir,
           dryRun: !!options.dryRun,
         });
       } catch (err) {

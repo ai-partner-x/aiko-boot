@@ -16,7 +16,6 @@ export type AddAppInput = {
   name?: string;
   type?: string;
   rootDir?: string;
-  templateDir?: string;
   dryRun: boolean;
 };
 
@@ -60,19 +59,13 @@ export function createAddAppUseCase(deps: AddAppDeps) {
       throw new Error('应用类型目前仅支持 admin 或 mobile');
     }
 
-    // 计算模板目录：
-    // - 如果用户提供了 --template-dir，使用用户指定的（可能是 scaffold 根目录或自定义模板）
-    // - 否则，使用内置的 scaffold-default 模板
-    let templateRoot = input.templateDir;
-    if (!templateRoot) {
-      const defaultTemplateRoot = path.resolve(
-        path.dirname(fileURLToPath(import.meta.url)),
-        '../../templates/scaffold-default',
-      );
-      templateRoot = defaultTemplateRoot;
-    }
-
-    const templateAppDir = path.join(templateRoot, 'packages', type);
+    // 使用内置顶层模板目录：templates/{admin|mobile|core}
+    const templateRoot = path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      '../../templates',
+    );
+    const templateDirName = type === 'admin' ? 'app-admin' : 'app-mobile';
+    const templateAppDir = path.join(templateRoot, templateDirName);
     if (!(await fs.pathExists(templateAppDir))) {
       throw new Error(`模板不存在：${templateAppDir}`);
     }
@@ -85,7 +78,7 @@ export function createAddAppUseCase(deps: AddAppDeps) {
     }
 
     // 如果还没有 core 包，则在第一次添加 admin/mobile 时一起从模板复制 core
-    const templateCoreDir = path.join(templateRoot, 'packages', 'core');
+    const templateCoreDir = path.join(templateRoot, 'app-core');
     const coreDir = path.join(packagesDir, 'core');
 
     await fs.ensureDir(packagesDir);

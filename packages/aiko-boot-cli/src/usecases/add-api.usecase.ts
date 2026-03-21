@@ -21,7 +21,6 @@ export type AddApiInput = {
   yes: boolean;
   interactive: boolean;
   rootDir?: string;
-  templateDir?: string;
   dryRun: boolean;
 };
 
@@ -104,13 +103,10 @@ export function createAddApiUseCase(deps: AddApiDeps) {
         : [];
 
     // 计算模板根目录：
-    // - 默认使用 CLI 包内部模板（plain => templates/api-base，system => templates/api-system）；
-    // - 如果用户通过 --template-dir 显式提供：
-    //   - 若该目录本身是一个 api 根（包含 app.config.ts 和 src/），则直接使用；
-    //   - 若该目录下存在 packages/api（例如传入 scaffold 根目录），则使用 packages/api 作为模板。
+    // - 默认使用 CLI 包内部模板（plain => templates/api-clean，system => templates/api-system）
     const defaultTemplatePlainApiDir = path.resolve(
       path.dirname(fileURLToPath(import.meta.url)),
-      '../../templates/api-base',
+      '../../templates/api-clean',
     );
     const defaultTemplateSystemApiDir = path.resolve(
       path.dirname(fileURLToPath(import.meta.url)),
@@ -125,25 +121,7 @@ export function createAddApiUseCase(deps: AddApiDeps) {
         `未找到 system 预设模板目录：${defaultTemplateSystemApiDir}，已回退到 plain 模板：${defaultTemplatePlainApiDir}`,
       );
     }
-
-    let templateApiDir = defaultTemplateApiDir;
-    if (input.templateDir) {
-      const candidateRoot = path.resolve(input.templateDir);
-      const candidateAsApiRoot = path.join(candidateRoot, 'app.config.ts');
-      const candidateApiDir = path.join(candidateRoot, 'packages', 'api');
-
-      if (await fs.pathExists(candidateAsApiRoot)) {
-        // 传入的是 api 根目录（类似 api-base）
-        templateApiDir = candidateRoot;
-      } else if (await fs.pathExists(path.join(candidateApiDir, 'app.config.ts'))) {
-        // 传入的是 scaffold 根目录，内部有 packages/api
-        templateApiDir = candidateApiDir;
-      } else {
-        throw new Error(
-          `无法识别的模板目录：${candidateRoot}（需要是 api 根目录，或包含 packages/api 的 scaffold 根目录）`,
-        );
-      }
-    }
+    const templateApiDir = defaultTemplateApiDir;
 
     if (input.dryRun) {
       logger.info(
